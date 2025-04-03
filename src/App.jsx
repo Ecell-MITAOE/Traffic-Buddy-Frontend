@@ -86,6 +86,7 @@ function App() {
                 </>
               }
             />
+            <Route path="/test" element={<div>Test route works!</div>} />
             <Route
               path="/login"
               element={
