@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base{
+    :root{
+        --color-bg-primary: #000000;
+        --color-bg-secondary: #1f1f1f;
+
+        --color-primary: #2f2f2f;
+        --color-primary-hov: #404040;
+
+        --color-secondary: #3956cc;
+        --color-secondary-hov: #2944b1;
+
+        --color-primary-border: #1f1f1f;
+        --color-secondary-border: #22347d;
+
+        --color-text-base: #f3f4f6;
+        --color-text-secondary: #9ca3af;
+        --color-text-traffic-reports: #fffc88;
+
+        --color-button-disabled: #374151;
+        --color-text-disabled: #6b7280;
+
+        --color-primary-divider: #646363;
+        /* --color-secondary-divider: #38373e; */
+        --color-secondary-divider: #374151 ;
+    }
+}
+
+.theme-dark{
+    --color-primary: #ff0000;
+}
+
+.theme-light{
+    --color-primary: #ffd900;
+}
+
+::-webkit-calendar-picker-indicator {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="15" viewBox="0 0 24 24"><path fill="%23bbbbbb" d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>');
+  }
