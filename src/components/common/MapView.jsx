@@ -30,9 +30,6 @@
 //     }
 // }
 
-// export default GoogleApiWrapper({
-//     apiKey:"AIzaSyCrSWFU35ffzHNtiByNDE4wXqCpXfHPlmU"
-// })(MapContainer);
 
 
 import { Component } from 'react';
