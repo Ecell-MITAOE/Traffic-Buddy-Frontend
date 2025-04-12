@@ -60,15 +60,15 @@ const Sidebar = () => {
         color: "#10B981",
         href: "/usermanagement",
       });
+      items.push({
+          name: "Email Records",
+          icon: Mail,
+          color: "#10B981",
+          href: "/emailRecords",
+      });
     }
 
     // EmailRecords Page
-    items.push({
-      name: "Email Records",
-      icon: Mail,
-      color: "#10B981",
-      href: "/emailRecords",
-    });
 
     // Everyone gets access to settings
     items.push({
