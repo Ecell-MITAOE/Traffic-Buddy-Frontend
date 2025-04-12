@@ -470,7 +470,7 @@ const AdminQueryManagementPage = () => {
       case "Pending":
         return "bg-red-700 text-yellow-100";
       case "In Progress":
-        return "bg-yellow-700 text-blue-100";
+        return "bg-yellow-500 text-blue-100";
       case "Resolved":
         return "bg-green-700 text-green-100";
       case "Rejected":
