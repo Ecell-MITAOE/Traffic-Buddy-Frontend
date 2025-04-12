@@ -474,7 +474,7 @@ const AdminQueryManagementPage = () => {
       case "Resolved":
         return "bg-green-700 text-green-100";
       case "Rejected":
-        return "bg-red-700 text-red-100";
+        return "bg-purple-500 text-red-100"; // Try purple-500
       default:
         return "bg-bgSecondary text-tBase";
     }
