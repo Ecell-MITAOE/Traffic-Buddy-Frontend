@@ -48,7 +48,7 @@ const InfractionsByDivisionChart = ({ data, name }) => {
         <Legend />
         <Bar dataKey="pending" fill="#ff6b6b" name="Pending" />
         <Bar dataKey="inProgress" fill="#feca57" name="In Progress" />
-        <Bar dataKey="resolved" fill="#54a0ff" name="Resolved" />
+        <Bar dataKey="resolved" fill="#10B981" name="Resolved" />
         <Bar dataKey="rejected" fill="#a55eea" name="Rejected" />
       </BarChart>
     </div>

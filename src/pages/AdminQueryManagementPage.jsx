@@ -197,6 +197,7 @@ const AdminQueryManagementPage = () => {
       accident: 0,
       roadDamage: 0,
       illegalParking: 0,
+      trafficSignalIssue: 0,
       suggestion: 0,
       generalReport: 0,
     };
@@ -220,6 +221,7 @@ const AdminQueryManagementPage = () => {
         else if (query.query_type === "Road Damage") byType.roadDamage++;
         else if (query.query_type === "Illegal Parking")
           byType.illegalParking++;
+        else if (query.query_type === "Traffic Signal Issue") byType.trafficSignalIssue++;
         else if (query.query_type === "Suggestion") byType.suggestion++;
         else if (query.query_type === "General Report") byType.generalReport++;
       }
@@ -466,9 +468,9 @@ const AdminQueryManagementPage = () => {
   const getBadgeColor = (status) => {
     switch (status) {
       case "Pending":
-        return "bg-yellow-700 text-yellow-100";
+        return "bg-red-700 text-yellow-100";
       case "In Progress":
-        return "bg-blue-700 text-blue-100";
+        return "bg-yellow-700 text-blue-100";
       case "Resolved":
         return "bg-green-700 text-green-100";
       case "Rejected":
@@ -856,6 +858,12 @@ const AdminQueryManagementPage = () => {
                     value="Illegal Parking"
                   >
                     Illegal Parking
+                  </option>
+                  <option 
+                    className="bg-primary hover:bg-hovPrimary"
+                    value="Traffic Signal Issue"
+                  >
+                    Traffic Signal Issue
                   </option>
                   <option
                     className="bg-primary hover:bg-hovPrimary"
