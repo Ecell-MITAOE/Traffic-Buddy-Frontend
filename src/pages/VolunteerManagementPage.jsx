@@ -541,11 +541,11 @@ const VolunteerManagementPage = () => {
                                                         ${
                                                           request.status ===
                                                           "Pending"
-                                                            ? "bg-yellow-800 text-yellow-100"
+                                                            ? "bg-red-800 text-yellow-100"
                                                             : request.status ===
                                                               "Approved"
                                                             ? "bg-green-800 text-green-100"
-                                                            : "bg-red-800 text-red-100"
+                                                            : "bg-purple-500 text-red-100"
                                                         }`}
                             >
                               {request.status}
