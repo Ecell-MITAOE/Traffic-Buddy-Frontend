@@ -22,13 +22,15 @@ const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       "&:hover": {
         borderColor: "#5a5a5a",
       },
-      zIndex: 9999,
+      // zIndex is usually not needed on control, but keep if intended
     }),
     menu: (provided) => ({
       ...provided,
       backgroundColor: "#1e1e1e",
       color: "#d4d4d4",
+      zIndex: 9999 // Ensure the menu appears above other elements
     }),
+    menuPortal: base => ({ ...base, zIndex: 9999 }), // Ensure the portal itself has high z-index
     option: (provided, state) => ({
       ...provided,
       backgroundColor: state.isFocused ? "#333333" : "#1e1e1e",
@@ -388,6 +390,8 @@ const VolunteerManagementPage = () => {
                     className="react-select-container"
                     classNamePrefix="react-select"
                     placeholder="Select Divisions..."
+                    menuPortalTarget={document.body} // Render menu in body to avoid z-index issues
+                    menuPosition={'fixed'} // Use fixed position for the menu portal
                   />
                   <div className="flex space-x-4">
                     <button
