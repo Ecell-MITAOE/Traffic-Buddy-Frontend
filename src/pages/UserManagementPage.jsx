@@ -303,7 +303,7 @@ const UserManagementPage = () => {
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-300 max-w-xs truncate">
                           {/* TODO => NEED TO UPDATE THE COLLECTION SCHEMA (ADD OFFICER POST) */}
-                          Sub Inspector
+                          Police Inspector
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
