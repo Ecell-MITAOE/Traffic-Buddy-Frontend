@@ -6,6 +6,7 @@ import Header from "../components/common/Header";
 import LineGraph from "../components/overview/lineGraph";
 import CategoryDistributionChart from "../components/overview/CategoryDistributionChart";
 import TwoValueRadialChart from "../components/overview/TwoValueRadialChart";
+import AverageResolutionTimeChart from '../components/adminOverview/AverageResolutionTimeChart';
 
 import InfractionsByDivisionChart from "../components/adminOverview/InfractionsByDivisionChart";
 import HorizontalBarChart from "../components/adminOverview/HorizontalBarChart";
@@ -516,7 +517,7 @@ const AdminOverviewPage = () => {
         />
       </motion.div>
 
-      {/* <motion.div
+      <motion.div
         className="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -524,12 +525,19 @@ const AdminOverviewPage = () => {
           duration: transitionDuration,
           delay: transitionDelay * 3.5,
         }}
-      > */}
-        {/* <LineGraph
+      > 
+        {/* { <LineGraph
           data={resolvedPercentageData}
           name={"Percentage of Resolved Queries by Division"}
+        /> */}
+        <AverageResolutionTimeChart
+          data={avgResolutionTimePerDivision}
+          name={"Average Resolution Time Per Division (Hours)"}
+          innerRadius={_innerRadius}
+          outerRadius={_outerRadius}
+          height={100}
         />
-      </motion.div> */}
+      </motion.div> 
 
       <motion.div
         className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-borderPrimary"
