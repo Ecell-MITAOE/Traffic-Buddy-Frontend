@@ -532,7 +532,7 @@ const AdminOverviewPage = () => {
         /> */}
         <AverageResolutionTimeChart
           data={avgResolutionTimePerDivision}
-          name={"Average Resolution Time Per Division (Hours)"}
+          name={"Average Resolution Time For Traffic Congestion Per Division (Hours)"}
           innerRadius={_innerRadius}
           outerRadius={_outerRadius}
           height={100}
