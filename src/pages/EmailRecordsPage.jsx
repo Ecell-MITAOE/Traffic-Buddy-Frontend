@@ -231,11 +231,11 @@ const EmailRecordsPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {formatDate(record.createdAt)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/*<td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
                           {record.division}
                         </span>
-                      </td>
+                      </td>*/}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
                           <button
