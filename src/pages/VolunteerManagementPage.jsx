@@ -656,9 +656,9 @@ const VolunteerManagementPage = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
                                                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                        ${request.status === "Pending" ? "bg-yellow-800 text-yellow-100" // Changed Pending color
+                                                        ${request.status === "Pending" ? "bg-red-500 text-white-100" // Changed Pending color
                                                                 : request.status === "Approved" ? "bg-green-800 text-green-100"
-                                                                    : "bg-red-800 text-red-100" // Changed Rejected color
+                                                                    : "bg-purple-500 text-white-100" // Changed Rejected color
                                                             }`}
                                                     >
                                                         {request.status}
