@@ -851,110 +851,125 @@ const QueryManagementPage = () => {
             <>
               <table className="min-w-full divide-y divide-gray-700 table-fixed">
                 <thead>
-                  <tr>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-12">
-                      #
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
-                      Type
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-64">
-                      Description
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-36">
-                      User
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
-                      Status
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-36">
-                      Date
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
-                      Actions
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
-                      Division
-                    </th>
-                  </tr>
+                    <tr>
+                        {/* 1. Add Serial Number Header */}
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-12">
+                            #
+                        </th>
+                        {/* 2. Adjust widths of other headers */}
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-32"> {/* Slightly wider for type */}
+                            Type
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-64"> {/* Keep description wider */}
+                            Description
+                        </th>
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-36"> {/* Narrower user */}
+                            User
+                        </th>
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24"> {/* Narrower status */}
+                            Status
+                        </th>
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-36"> {/* Narrower date */}
+                            Date
+                        </th>
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24"> {/* Narrower actions */}
+                            Actions
+                        </th>
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24"> {/* Narrower division */}
+                            Division
+                        </th>
+                    </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {queries.map((query, index) => (
-                    <motion.tr
-                      key={query._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {index + 1 + (currentPage - 1) * 20}
-                      </td>
-                      <td className="px-2 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                          {query.query_type}
-                        </span>
-                      </td>
-                      <td className="px-3 py-4">
-                        <div className="text-sm text-gray-300 line-clamp-2">
-                          {query.description}
-                        </div>
-                      </td>
-                      <td className="px-2 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-7 w-7">
-                            <div className="h-7 w-7 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 flex items-center justify-center text-tBase font-semibold text-xs">
-                              {query.user_name?.charAt(0) || "U"}
-                            </div>
-                          </div>
-                          <div className="ml-2">
-                            <div className="text-sm font-medium text-tBase truncate max-w-[100px]">
-                              {query.user_name}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-2 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBadgeColor(
-                            query.status
-                          )}`}
+                    {queries.map((query, index) => (
+                        <motion.tr
+                            key={query._id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="hover:bg-hovPrimary/50" // Add hover effect
                         >
-                          {query.status}
-                        </span>
-                      </td>
-                      <td className="px-2 py-4 whitespace-nowrap text-xs text-gray-300">
-                        {formatDate(query.timestamp)}
-                      </td>
-                      <td className="px-2 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            className="text-blue-400 hover:text-blue-300 text-xs"
-                            onClick={() => fetchQueryDetails(query._id)}
-                          >
-                            Details
-                          </button>
-                          <button
-                            className="text-green-400 hover:text-green-300"
-                            onClick={() =>
-                              openInGoogleMaps(
-                                query.location.latitude,
-                                query.location.longitude
-                              )
-                            }
-                          >
-                            <MapPin size={14} />
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-2 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                          {query.divisionName}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  ))}
+                            {/* 3. Add Serial Number Data Cell */}
+                            <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {/* Calculate serial number based on page and index */}
+                                {index + 1 + (currentPage - 1) * 20}
+                            </td>
+                            {/* 4. Adjust padding and content display in other cells */}
+                            <td className="px-2 py-4 whitespace-nowrap">
+                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
+                                    {query.query_type}
+                                </span>
+                            </td>
+                            <td className="px-3 py-4">
+                                {/* Use line-clamp to limit description lines */}
+                                <div className="text-sm text-gray-300 line-clamp-2" title={query.description}>
+                                    {query.description}
+                                </div>
+                            </td>
+                            <td className="px-2 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                    {/* Optional: Slightly smaller avatar */}
+                                    <div className="flex-shrink-0 h-7 w-7">
+                                        <div className="h-7 w-7 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 flex items-center justify-center text-tBase font-semibold text-xs">
+                                            {query.user_name?.charAt(0)?.toUpperCase() || "U"}
+                                        </div>
+                                    </div>
+                                    <div className="ml-2">
+                                        {/* Truncate username if needed */}
+                                        <div className="text-sm font-medium text-tBase truncate max-w-[100px]" title={query.user_name}>
+                                            {query.user_name || 'Unknown'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-2 py-4 whitespace-nowrap">
+                                <span
+                                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBadgeColor(
+                                        query.status
+                                    )}`}
+                                >
+                                    {query.status}
+                                </span>
+                            </td>
+                            <td className="px-2 py-4 whitespace-nowrap text-xs text-gray-300">
+                                {formatDate(query.timestamp)}
+                            </td>
+                            <td className="px-2 py-4 whitespace-nowrap">
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        className="text-blue-400 hover:text-blue-300 text-xs"
+                                        onClick={() => fetchQueryDetails(query._id)}
+                                        title="View Details"
+                                    >
+                                        Details
+                                    </button>
+                                    {/* Ensure location exists before trying to access properties */}
+                                    {query.location?.latitude && query.location?.longitude && (
+                                        <button
+                                            className="text-green-400 hover:text-green-300"
+                                            onClick={() =>
+                                                openInGoogleMaps(
+                                                    query.location.latitude,
+                                                    query.location.longitude
+                                                )
+                                            }
+                                            title="View on Map"
+                                        >
+                                            <MapPin size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            </td>
+                            <td className="px-2 py-4 whitespace-nowrap">
+                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-700 text-gray-200" title={query.divisionName}>
+                                    {/* Truncate division name if too long */}
+                                    {query.divisionName ? (query.divisionName.length > 10 ? query.divisionName.substring(0, 8) + '...' : query.divisionName) : 'N/A'}
+                                </span>
+                            </td>
+                        </motion.tr>
+                    ))}
                 </tbody>
-              </table>
+            </table>
 
               <div className="flex justify-between items-center mt-6">
                 <div className="text-sm text-gray-400">
