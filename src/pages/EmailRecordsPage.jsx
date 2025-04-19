@@ -17,6 +17,7 @@ const EmailRecordsPage = () => {
   const [detailsData, setDetailsData] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentYearMonth());
+  const [queryDetailsMap, setQueryDetailsMap] = useState({});
   
   // For Excel export
   function getCurrentYearMonth() {
@@ -47,6 +48,11 @@ const EmailRecordsPage = () => {
       if (response.data.success) {
         setEmailRecords(response.data.data);
         setTotalPages(response.data.totalPages);
+        
+        // Fetch details for all unique query IDs
+        const uniqueQueryIds = [...new Set(response.data.data.map(record => record.queryId))];
+        fetchQueryDetailsForIds(uniqueQueryIds);
+        
         setLoading(false);
       } else {
         setLoading(false);
@@ -56,6 +62,23 @@ const EmailRecordsPage = () => {
       setLoading(false);
       console.error("Error fetching email records:", error);
     }
+  };
+
+  const fetchQueryDetailsForIds = async (queryIds) => {
+    const detailsMap = {};
+    
+    for (const id of queryIds) {
+      try {
+        const response = await axios.get(`${backendUrl}/api/queries/${id}`);
+        if (response.data.success) {
+          detailsMap[id] = response.data.data;
+        }
+      } catch (error) {
+        console.error(`Error fetching details for query ${id}:`, error);
+      }
+    }
+    
+    setQueryDetailsMap(detailsMap);
   };
 
   const groupEmailRecords = () => {
@@ -145,6 +168,21 @@ const EmailRecordsPage = () => {
         // Group the records
         const recordsToExport = response.data.data;
         
+        // Fetch all query details for the records to be exported
+        const uniqueQueryIds = [...new Set(recordsToExport.map(record => record.queryId))];
+        const exportDetailsMap = {};
+        
+        for (const id of uniqueQueryIds) {
+          try {
+            const response = await axios.get(`${backendUrl}/api/queries/${id}`);
+            if (response.data.success) {
+              exportDetailsMap[id] = response.data.data;
+            }
+          } catch (error) {
+            console.error(`Error fetching details for query ${id}:`, error);
+          }
+        }
+        
         // Group records by query ID and department
         const groupedRecords = {};
         recordsToExport.forEach(record => {
@@ -165,25 +203,61 @@ const EmailRecordsPage = () => {
         });
         
         // Convert to array for Excel export
-        const excelData = Object.values(groupedRecords).map((item, index) => ({
-          "Sr. No.": index + 1,
-          "Department": item.departmentName,
-          "Emails": item.emailList.join(", "),
-          "Subject": item.subject,
-          "Sent At": item.sentAt,
-          "Division": item.division,
-          "Status": item.status
-        }));
+        const excelData = Object.values(groupedRecords).map((item, index) => {
+          const queryDetails = exportDetailsMap[item.queryId] || {};
+          let location = "";
+          if (queryDetails.location && queryDetails.location.address) {
+            location = queryDetails.location.address;
+          }
+          
+          return {
+            "Sr. No.": index + 1,
+            "Department": item.departmentName,
+            "Division": item.division,
+            "Subject": item.subject,
+            "Email List": item.emailList.join(", "),
+            "Sent At": item.sentAt,
+            "Status": item.status,
+            "Query Type": queryDetails.query_type || "",
+            "Description": queryDetails.description || "",
+            "Location": location,
+            "Reported By": queryDetails.user_name || "",
+            "Contact": queryDetails.user_id ? queryDetails.user_id.replace("whatsapp:", "") : "",
+            "Reported On": queryDetails.timestamp ? formatDate(queryDetails.timestamp) : "",
+            "Current Status": queryDetails.status || ""
+          };
+        });
         
         // Create worksheet
         const worksheet = XLSX.utils.json_to_sheet(excelData);
+        
+        // Set column widths
+        const columnWidths = [
+          { wch: 6 },   // Sr. No.
+          { wch: 15 },  // Department
+          { wch: 12 },  // Division
+          { wch: 30 },  // Subject
+          { wch: 40 },  // Email List
+          { wch: 20 },  // Sent At
+          { wch: 8 },   // Status
+          { wch: 15 },  // Query Type
+          { wch: 40 },  // Description
+          { wch: 40 },  // Location
+          { wch: 15 },  // Reported By
+          { wch: 15 },  // Contact
+          { wch: 20 },  // Reported On
+          { wch: 12 }   // Current Status
+        ];
+        
+        worksheet['!cols'] = columnWidths;
         
         // Create workbook
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Email Records");
         
         // Generate Excel file
-        const fileName = `TrafficBuddy_EmailRecords_${year}_${month}.xlsx`;
+        const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
+        const fileName = `TrafficBuddy_EmailRecords_${monthName}_${year}.xlsx`;
         XLSX.writeFile(workbook, fileName);
         
         setExportLoading(false);
@@ -198,7 +272,7 @@ const EmailRecordsPage = () => {
     <div className="flex-1 overflow-auto relative z-10">
       <Header title="Email Records" />
 
-      <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
+      <main className="max-w-full mx-auto py-6 px-4 lg:px-8">
         <motion.div
           className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary mb-8"
           initial={{ opacity: 0, y: 20 }}
@@ -244,28 +318,28 @@ const EmailRecordsPage = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-700">
+                <table className="w-full divide-y divide-gray-700 table-fixed">
                   <thead>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-12">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Department Name
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[15%]">
+                        Department
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[18%]">
                         Emails
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[25%]">
                         Subject
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[15%]">
                         Sent At
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[10%]">
                         Division
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[10%]">
                         Actions
                       </th>
                     </tr>
@@ -278,38 +352,38 @@ const EmailRecordsPage = () => {
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        <td className="px-4 py-4 text-sm text-gray-300">
                           {(currentPage - 1) * 10 + index + 1}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                          <div className="text-sm text-gray-300 max-w-xs truncate">
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-300" title={record.departmentName}>
                             {record.departmentName}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <div className="text-sm text-gray-300">
                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
                               {record.emailList.length} recipient(s)
                             </span>
-                            <div className="mt-1 text-xs text-gray-400 max-w-xs truncate">
+                            <div className="mt-1 text-xs text-gray-400 overflow-hidden text-ellipsis" title={record.emailList.join(", ")}>
                               {record.emailList[0]}{record.emailList.length > 1 ? `, +${record.emailList.length - 1} more` : ''}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-300 max-w-xs truncate">
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-300 overflow-hidden text-ellipsis" title={record.subject}>
                             {record.subject}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        <td className="px-4 py-4 text-sm text-gray-300">
                           {formatDate(record.sentAt)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4">
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-800 text-purple-100">
                             {record.division}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4">
                           <div className="flex items-center space-x-2">
                             <button
                               className="text-blue-400 hover:text-blue-300"
