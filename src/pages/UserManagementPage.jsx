@@ -254,6 +254,10 @@ const UserManagementPage = () => {
               <table className="min-w-full divide-y divide-seperationPrimary">
                 <thead>
                   <tr>
+                    {/* Added Sr.No. column header */}
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-16">
+                      Sr.No.
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Officer
                     </th>
@@ -269,13 +273,17 @@ const UserManagementPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-seperationSecondary">
-                  {queries.map((query) => (
+                  {queries.map((query, index) => (
                     <motion.tr
                       key={query.divisionId}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                     >
+                      {/* Added Sr.No. column data */}
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {(currentPage - 1) * 10 + index + 1}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8">
