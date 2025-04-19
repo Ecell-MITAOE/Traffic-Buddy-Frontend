@@ -126,6 +126,13 @@ const AdminQueryManagementPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false); // For voice recognition
 
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedQueryForReject, setSelectedQueryForReject] = useState(null);
+  const [rejectMessage, setRejectMessage] = useState("");
+  const [rejectError, setRejectError] = useState("");
+  const [rejectSuccess, setRejectSuccess] = useState("");
+  const [rejectLoading, setRejectLoading] = useState(false);
+
   // State for selected action in dropdown (not used anymore, but kept for compatibility)
   const [selectedAction, setSelectedAction] = useState("");
 
@@ -582,6 +589,48 @@ const AdminQueryManagementPage = () => {
     }
   };
 
+  const openRejectModal = (query) => {
+    setSelectedQueryForReject(query);
+    setRejectModalOpen(true);
+    setRejectMessage("");
+    setRejectError("");
+    setRejectSuccess("");
+  };
+  
+  const handleRejectSubmit = async (e) => {
+    e.preventDefault();
+    setRejectError("");
+    setRejectSuccess("");
+  
+    if (rejectMessage.trim() === "") {
+      setRejectError("Please provide rejection reason");
+      return;
+    }
+  
+    setRejectLoading(true);
+  
+    try {
+      await axios.put(`${backendUrl}/api/queries/${selectedQueryForReject._id}/status`, {
+        status: "Rejected",
+        resolution_note: rejectMessage
+      });
+  
+      setRejectSuccess("Query rejected successfully!");
+      setTimeout(() => {
+        setRejectModalOpen(false);
+        fetchQueries();
+        if (viewDetailsId === selectedQueryForReject._id) {
+          fetchQueryDetails(selectedQueryForReject._id);
+        }
+      }, 1500);
+    } catch (error) {
+      console.error("Error rejecting query:", error);
+      setRejectError(error.response?.data?.message || "Something went wrong. Please try again.");
+    } finally {
+      setRejectLoading(false);
+    }
+  };
+
   // New Functions for Resolve Modal
   const openResolveModal = (query) => {
     setSelectedQueryForResolve(query);
@@ -740,9 +789,11 @@ const AdminQueryManagementPage = () => {
       alert("Please select a status.");
       return;
     }
-
+  
     if (detailsSelectedStatus === "Resolved") {
       openResolveModal(detailsData);
+    } else if (detailsSelectedStatus === "Rejected") {
+      openRejectModal(detailsData);
     } else if (
       detailsSelectedStatus &&
       detailsSelectedStatus !== detailsData.status
@@ -1691,6 +1742,154 @@ const AdminQueryManagementPage = () => {
             </motion.div>
           </div>
         )}
+        {/* Rejection Modal */}
+          {rejectModalOpen && selectedQueryForReject && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <motion.div
+                className="bg-bgSecondary rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-xl font-semibold text-tBase">
+                    Reject Query
+                  </h2>
+                  <button
+                    className="text-gray-400 hover:text-tBase"
+                    onClick={() => {
+                      setRejectModalOpen(false);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-medium text-tBase">
+                    Submit Rejection Reason
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    Please provide a reason for rejecting this query
+                  </p>
+                </div>
+
+                <form className="space-y-6" onSubmit={handleRejectSubmit}>
+                  {rejectError && (
+                    <div className="bg-red-500 bg-opacity-20 border-l-4 border-red-500 p-4 rounded-md">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-5 w-5 text-red-400"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-red-200">{rejectError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {rejectSuccess && (
+                    <div className="bg-green-500 bg-opacity-20 border-l-4 border-green-500 p-4 rounded-md">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-5 w-5 text-green-400"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-green-200">{rejectSuccess}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="rounded-md -space-y-px">
+                    <div className="mb-5">
+                      <label
+                        htmlFor="reject-message"
+                        className="block text-sm font-medium text-gray-400 mb-1"
+                      >
+                        Rejection Reason
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          id="reject-message"
+                          name="reject-message"
+                          required
+                          value={rejectMessage}
+                          onChange={(e) => setRejectMessage(e.target.value)}
+                          className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm"
+                          placeholder="Enter reason for rejection..."
+                          disabled={rejectLoading}
+                          rows="4"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={rejectLoading}
+                      className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-tBase ${
+                        rejectLoading
+                          ? "bg-red-400 cursor-not-allowed"
+                          : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      } transition-colors duration-150`}
+                    >
+                      {rejectLoading ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-tBase"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Submitting...
+                        </>
+                      ) : (
+                        "Submit Rejection"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
       </main>
     </div>
   );
