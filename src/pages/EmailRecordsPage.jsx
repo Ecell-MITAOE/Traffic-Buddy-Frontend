@@ -1,66 +1,49 @@
 import { useState, useEffect } from "react";
-import CustomDropdown from "../components/common/CustomDropdown";
-import {
-  AlertTriangle,
-  Check,
-  Clock,
-  FileSearch,
-  Mail,
-  MapPin,
-  Search,
-  Calendar,
-  Download,
-  Mic,
-} from "lucide-react";
+import { AlertTriangle, Check, FileSearch, Mail, MapPin, Search, Calendar, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
-
+import * as XLSX from 'xlsx';
 import Header from "../components/common/Header";
 
 const backendUrl = import.meta.env.VITE_Backend_URL || "http://localhost:3000";
 
 const EmailRecordsPage = () => {
-  const [departmentEmail, setDepartmentEmail] = useState("");
-  const [departmentName, setDepartmentName] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [departments, setDepartments] = useState([]);
   const [emailRecords, setEmailRecords] = useState([]);
-
-  // Original query stats (all data)
+  const [groupedRecords, setGroupedRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewDetailsId, setViewDetailsId] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
-
-  // Resolve modal states
-  const [resolveModalOpen, setResolveModalOpen] = useState(false);
-  const [selectedQueryForResolve, setSelectedQueryForResolve] = useState(null);
-  const [message, setMessage] = useState("");
-  const [image, setImage] = useState(null);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false); // For voice recognition
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentYearMonth());
+  
+  // For Excel export
+  function getCurrentYearMonth() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
 
   useEffect(() => {
     fetchEmailRecords();
-    fetchDepartments();
   }, [currentPage]);
+
+  useEffect(() => {
+    if (emailRecords.length > 0) {
+      groupEmailRecords();
+    }
+  }, [emailRecords]);
 
   const fetchEmailRecords = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${backendUrl}/api/queries/email-records`,
-        {
-          params: {
-            page: currentPage,
-            limit: 10,
-          },
-        }
-      );
+      const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
+        params: {
+          page: currentPage,
+          limit: 50, // Get more records to allow for proper grouping
+        },
+      });
+      
       if (response.data.success) {
         setEmailRecords(response.data.data);
         setTotalPages(response.data.totalPages);
@@ -75,15 +58,38 @@ const EmailRecordsPage = () => {
     }
   };
 
-  const fetchDepartments = async () => {
-    try {
-      const response = await axios.get(`${backendUrl}/api/departments`);
-      if (response.data.success) {
-        setDepartments(response.data.departments);
+  const groupEmailRecords = () => {
+    // Group records by query ID and department name
+    const groupedByQueryAndDept = emailRecords.reduce((acc, record) => {
+      const key = `${record.queryId}_${record.departmentName}`;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          queryId: record.queryId,
+          departmentName: record.departmentName,
+          subject: record.subject,
+          sentAt: record.sentAt,
+          division: record.division || "Unknown",
+          emailList: [record.emails],
+          recordIds: [record._id]
+        };
+      } else {
+        // Add this email to the list if it's not already there
+        if (!acc[key].emailList.includes(record.emails)) {
+          acc[key].emailList.push(record.emails);
+          acc[key].recordIds.push(record._id);
+        }
       }
-    } catch (error) {
-      console.error("Error fetching departments:", error);
-    }
+      
+      return acc;
+    }, {});
+
+    // Convert to array and sort by sent date (newest first)
+    const groupedArray = Object.values(groupedByQueryAndDept).sort((a, b) => 
+      new Date(b.sentAt) - new Date(a.sentAt)
+    );
+    
+    setGroupedRecords(groupedArray);
   };
 
   const fetchQueryDetails = async (id) => {
@@ -92,7 +98,6 @@ const EmailRecordsPage = () => {
       if (response.data.success) {
         setDetailsData(response.data.data);
         setViewDetailsId(id);
-        setDetailsSelectedStatus(response.data.data.status); // Initialize with current status
       }
     } catch (error) {
       console.error("Error fetching query details:", error);
@@ -100,10 +105,7 @@ const EmailRecordsPage = () => {
   };
 
   const openInGoogleMaps = (latitude, longitude) => {
-    window.open(
-      `https://www.google.com/maps?q=${latitude},${longitude}`,
-      "_blank"
-    );
+    window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, "_blank");
   };
 
   const formatDate = (dateString) => {
@@ -111,70 +113,129 @@ const EmailRecordsPage = () => {
     return date.toLocaleString();
   };
 
-  const handleDepartmentChange = (e) => {
-    const selectedOption = e.target.value;
-    const selectedDepartment = departments.find(
-      (dept) => dept.name === selectedOption
-    );
-    if (selectedDepartment) {
-      setDepartmentEmail(selectedDepartment.emails);
-      setDepartmentName(selectedDepartment.name);
-    } else {
-      setDepartmentEmail("");
-      setDepartmentName("");
-    }
-    setSelectedDepartment(selectedOption);
-  };
-
-  const getBadgeColor = (status) => {
-    switch (status) {
-      case "Pending":
-        return "bg-yellow-700 text-yellow-100";
-      case "In Progress":
-        return "bg-blue-700 text-blue-100";
-      case "Resolved":
-        return "bg-green-700 text-green-100";
-      case "Rejected":
-        return "bg-red-700 text-red-100";
-      default:
-        return "bg-bgSecondary text-tBase";
-    }
-  };
-
   const closeDetails = () => {
     setViewDetailsId(null);
     setDetailsData(null);
-    setDetailsSelectedStatus(""); // Reset details popup status
-    setSelectedAction(""); // Reset selected action when closing
   };
 
-  // New Functions for Resolve Modal
-  const openResolveModal = (query) => {
-    setSelectedQueryForResolve(query);
-    setResolveModalOpen(true);
-    setMessage("");
-    setImage(null);
-    setError("");
-    setSuccess("");
-    setIsListening(false); // Reset listening state
+  const exportToExcel = async () => {
+    setExportLoading(true);
+    try {
+      // Extract year and month from the selected value
+      const [year, month] = selectedMonth.split('-');
+      
+      // Construct date range for the selected month
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0); // Last day of the month
+      
+      // Format dates for API request
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      // Fetch email records for the selected month (all pages)
+      const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
+        params: {
+          startDate: startDateStr,
+          endDate: endDateStr,
+          limit: 1000, // Get a large batch
+        },
+      });
+      
+      if (response.data.success) {
+        // Group the records
+        const recordsToExport = response.data.data;
+        
+        // Group records by query ID and department
+        const groupedRecords = {};
+        recordsToExport.forEach(record => {
+          const key = `${record.queryId}_${record.departmentName}`;
+          if (!groupedRecords[key]) {
+            groupedRecords[key] = {
+              queryId: record.queryId,
+              departmentName: record.departmentName,
+              subject: record.subject,
+              sentAt: formatDate(record.sentAt),
+              division: record.division || "Unknown",
+              emailList: [record.emails],
+              status: record.status || "sent"
+            };
+          } else if (!groupedRecords[key].emailList.includes(record.emails)) {
+            groupedRecords[key].emailList.push(record.emails);
+          }
+        });
+        
+        // Convert to array for Excel export
+        const excelData = Object.values(groupedRecords).map((item, index) => ({
+          "Sr. No.": index + 1,
+          "Department": item.departmentName,
+          "Emails": item.emailList.join(", "),
+          "Subject": item.subject,
+          "Sent At": item.sentAt,
+          "Division": item.division,
+          "Status": item.status
+        }));
+        
+        // Create worksheet
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        
+        // Create workbook
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Email Records");
+        
+        // Generate Excel file
+        const fileName = `TrafficBuddy_EmailRecords_${year}_${month}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+        
+        setExportLoading(false);
+      }
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      setExportLoading(false);
+    }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    setImage(file);
-  };
   return (
     <div className="flex-1 overflow-auto relative z-10">
       <Header title="Email Records" />
 
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
         <motion.div
-          className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary mb-8 overflow-x-auto"
+          className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h2 className="text-xl font-semibold text-tBase mb-4">Emails</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-tBase">Email Records</h2>
+            
+            <div className="flex space-x-4">
+              <div className="flex items-center">
+                <label htmlFor="month-select" className="text-sm text-gray-400 mr-2">
+                  Select Month:
+                </label>
+                <input 
+                  type="month" 
+                  id="month-select"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="bg-bgPrimary border border-borderPrimary rounded-md px-3 py-1 text-sm"
+                />
+              </div>
+              
+              <button
+                onClick={exportToExcel}
+                disabled={exportLoading}
+                className="flex items-center px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-md text-sm"
+              >
+                {exportLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <Download size={16} className="mr-2" />
+                )}
+                Export to Excel
+              </button>
+            </div>
+          </div>
 
           {loading ? (
             <div className="flex justify-center items-center h-32">
@@ -182,74 +243,87 @@ const EmailRecordsPage = () => {
             </div>
           ) : (
             <>
-              <table className="min-w-full divide-y divide-gray-700">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Department Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Subject
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Sent At
-                    </th>
-                    {/*<th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Division
-                    </th>*/}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {emailRecords.map((record) => (
-                    <motion.tr
-                      key={record._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        <div className="text-sm text-gray-300 max-w-xs truncate">
-                          {record.departmentName}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                          {record.emails}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-300 max-w-xs truncate">
-                          {record.subject}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {formatDate(record.createdAt)}
-                      </td>
-                      {/*<td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                          {record.division}
-                        </span>
-                      </td>*/}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            className="text-blue-400 hover:text-blue-300"
-                            onClick={() => fetchQueryDetails(record.queryId)}
-                          >
-                            Details
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-700">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Sr. No.
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Department Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Emails
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Subject
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Sent At
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Division
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {groupedRecords.map((record, index) => (
+                      <motion.tr
+                        key={`${record.queryId}_${record.departmentName}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          {(currentPage - 1) * 10 + index + 1}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          <div className="text-sm text-gray-300 max-w-xs truncate">
+                            {record.departmentName}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-300">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
+                              {record.emailList.length} recipient(s)
+                            </span>
+                            <div className="mt-1 text-xs text-gray-400 max-w-xs truncate">
+                              {record.emailList[0]}{record.emailList.length > 1 ? `, +${record.emailList.length - 1} more` : ''}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-300 max-w-xs truncate">
+                            {record.subject}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          {formatDate(record.sentAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-800 text-purple-100">
+                            {record.division}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              className="text-blue-400 hover:text-blue-300"
+                              onClick={() => fetchQueryDetails(record.queryId)}
+                            >
+                              Details
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               <div className="flex justify-between items-center mt-6">
                 <div className="text-sm text-gray-400">
@@ -307,6 +381,29 @@ const EmailRecordsPage = () => {
               </div>
 
               <div className="mt-4 space-y-4">
+                {/* Email Recipients for this query */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400 mb-2">
+                    Email Recipients:
+                  </h3>
+                  <div className="bg-bgPrimary p-3 rounded-lg">
+                    {groupedRecords
+                      .filter(record => record.queryId === viewDetailsId)
+                      .map(record => (
+                        <div key={record.departmentName} className="mb-2">
+                          <div className="font-medium text-gray-300">{record.departmentName}:</div>
+                          <ul className="list-disc list-inside ml-2">
+                            {record.emailList.map(email => (
+                              <li key={email} className="text-sm text-gray-400">
+                                {email}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
                 {detailsData.photo_url && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-400 mb-2">
@@ -357,25 +454,27 @@ const EmailRecordsPage = () => {
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-medium text-gray-400">
-                    Location Address:
-                  </h3>
-                  <p className="text-gray-200">
-                    {detailsData.location.address}
-                  </p>
-                  <button
-                    className="mt-2 flex items-center text-blue-400 hover:text-blue-300"
-                    onClick={() =>
-                      openInGoogleMaps(
-                        detailsData.location.latitude,
-                        detailsData.location.longitude
-                      )
-                    }
-                  >
-                    <MapPin size={16} className="mr-1" /> View on Google Maps
-                  </button>
-                </div>
+                {detailsData.location && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-400">
+                      Location Address:
+                    </h3>
+                    <p className="text-gray-200">
+                      {detailsData.location.address}
+                    </p>
+                    <button
+                      className="mt-2 flex items-center text-blue-400 hover:text-blue-300"
+                      onClick={() =>
+                        openInGoogleMaps(
+                          detailsData.location.latitude,
+                          detailsData.location.longitude
+                        )
+                      }
+                    >
+                      <MapPin size={16} className="mr-1" /> View on Google Maps
+                    </button>
+                  </div>
+                )}
 
                 {detailsData.resolution_note && (
                   <div>
