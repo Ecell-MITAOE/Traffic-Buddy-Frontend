@@ -91,6 +91,11 @@ const VolunteerManagementPage = () => {
     const [showApproverInput, setShowApproverInput] = useState(false);
     const [currentRequestId, setCurrentRequestId] = useState(null);
 
+    // New states for rejection note modal
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectNote, setRejectNote] = useState("");
+    const [rejectorName, setRejectorName] = useState("");
+
     const [selectedOptions, setSelectedOptions] = useState([]);
     const divisionOptions = [
         { value: "MAHALUNGE", label: "Mahalunge" },
@@ -212,12 +217,12 @@ const VolunteerManagementPage = () => {
         }
     };
 
-    const updateRequestStatus = async (id, status, approverName, note) => {
+    const updateRequestStatus = async (id, status, verifierName, note) => {
         try {
             await axios.put(`${API_BASE_URL}/applications/${id}/status`, {
                 status,
                 verification_notes: note,
-                verified_by: approverName
+                verified_by: verifierName
             });
 
             toast.success(`Request ${status.toLowerCase()} successfully`);
@@ -247,8 +252,29 @@ const VolunteerManagementPage = () => {
     };
 
     const handleReject = (id) => {
-        // Optionally, prompt for a rejection reason
-        updateRequestStatus(id, "Rejected", "Admin", "Thank you for your interest. Unfortunately, we cannot accept your request at this time.");
+        setCurrentRequestId(id);
+        setShowRejectModal(true);
+    };
+
+    const confirmReject = () => {
+        if (!rejectorName.trim()) {
+            toast.error("Please enter your name");
+            return;
+        }
+        
+        if (!rejectNote.trim()) {
+            toast.error("Please provide a reason for rejection");
+            return;
+        }
+        
+        const note = `Rejected by ${rejectorName}. Reason: ${rejectNote}`;
+        updateRequestStatus(currentRequestId, "Rejected", rejectorName, note);
+        
+        // Reset state
+        setShowRejectModal(false);
+        setRejectNote("");
+        setRejectorName("");
+        setCurrentRequestId(null);
     };
 
     const handleBroadcastToAll = async () => {
@@ -330,7 +356,8 @@ const VolunteerManagementPage = () => {
             });
 
             if (response.data.success && response.data.data.length > 0) {
-                const dataToExport = response.data.data.map(req => ({
+                const dataToExport = response.data.data.map((req, index) => ({
+                    "Sr.No.": index + 1,
                     "Applied At": formatDate(req.applied_at),
                     "Full Name": req.full_name,
                     "WhatsApp Name": req.user_name,
@@ -601,6 +628,9 @@ const VolunteerManagementPage = () => {
                                 <table className="min-w-full divide-y divide-seperationPrimary">
                                     <thead className="bg-primary sticky top-0"> {/* Make header sticky */}
                                         <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider w-16">
+                                                Sr.No.
+                                            </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
                                                 Applicant
                                             </th>
@@ -622,8 +652,11 @@ const VolunteerManagementPage = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-bgSecondary bg-opacity-50 divide-y divide-seperationSecondary">
-                                        {filteredRequests.map((request) => (
+                                        {filteredRequests.map((request, index) => (
                                             <tr key={request._id} className="hover:bg-hovPrimary transition-colors duration-150">
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                                                    {(currentPage - 1) * itemsPerPage + index + 1}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
                                                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
@@ -819,9 +852,22 @@ const VolunteerManagementPage = () => {
                                         </button>
                                     </>
                                 ) : (
-                                    <span className={`px-3 py-1 rounded-md text-sm font-medium ${detailsData.status === "Approved" ? "bg-green-800 text-green-100" : "bg-red-800 text-red-100"}`}>
-                                        {detailsData.status}
-                                    </span>
+                                    <>
+                                        <span className={`px-3 py-1 rounded-md text-sm font-medium ${detailsData.status === "Approved" ? "bg-green-800 text-green-100" : "bg-red-800 text-red-100"}`}>
+                                            {detailsData.status}
+                                        </span>
+                                        {/* Allow reject action even if status is Approved */}
+                                        {detailsData.status === "Approved" && (
+                                            <button
+                                                onClick={() => handleReject(detailsData._id)}
+                                                className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition text-sm font-medium"
+                                                title="Reject"
+                                            >
+                                                <X className="w-5 h-5 mr-1" />
+                                                Reject
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                                 <button
                                     className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition text-sm font-medium"
@@ -861,6 +907,51 @@ const VolunteerManagementPage = () => {
                                     disabled={!approverName.trim()}
                                 >
                                     Confirm Approve
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Rejection Note Modal */}
+                {showRejectModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+                        <div className="bg-bgSecondary rounded-xl p-6 max-w-md w-full border border-borderPrimary shadow-xl">
+                            <h3 className="text-xl font-semibold text-tBase mb-4">
+                                Confirm Rejection
+                            </h3>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Your Name:</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-primary text-tBase rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-secondary border border-borderPrimary"
+                                    placeholder="Enter your name"
+                                    value={rejectorName}
+                                    onChange={(e) => setRejectorName(e.target.value)}
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Reason for Rejection:</label>
+                                <textarea
+                                    className="w-full bg-primary text-tBase rounded-md p-3 h-24 focus:outline-none focus:ring-2 focus:ring-secondary border border-borderPrimary"
+                                    placeholder="Please explain why this request is being rejected"
+                                    value={rejectNote}
+                                    onChange={(e) => setRejectNote(e.target.value)}
+                                ></textarea>
+                            </div>
+                            <div className="flex justify-end space-x-4">
+                                <button
+                                    className="bg-gray-600 hover:bg-gray-700 text-tBase py-2 px-4 rounded-md transition"
+                                    onClick={() => { setShowRejectModal(false); setRejectNote(""); setRejectorName(""); setCurrentRequestId(null); }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="bg-red-600 hover:bg-red-700 text-tBase py-2 px-4 rounded-md transition disabled:opacity-50"
+                                    onClick={confirmReject}
+                                    disabled={!rejectNote.trim() || !rejectorName.trim()}
+                                >
+                                    Confirm Reject
                                 </button>
                             </div>
                         </div>
