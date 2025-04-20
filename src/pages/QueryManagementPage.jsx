@@ -190,8 +190,12 @@ const QueryManagementPage = () => {
   ]);
 
   useEffect(() => {
-    calculateFilteredStats();
-  }, [queries]);
+    // Only recalculate filtered stats when we have meaningful data
+    if (queries && queries.length > 0 && !loading) {
+      console.log("Recalculating stats from queries...");
+      calculateFilteredStats();
+    }
+  }, [queries, loading]);
 
   const fetchDepartments = async () => {
     try {
@@ -225,16 +229,74 @@ const QueryManagementPage = () => {
     }
   };
 
-  const calculateFilteredStats = () => {
-    if (!queries.length) return;
+  // const calculateFilteredStats = () => {
+  //   if (!queries.length) return;
 
+  //   const byStatus = {
+  //     pending: 0,
+  //     inProgress: 0,
+  //     resolved: 0,
+  //     rejected: 0,
+  //   };
+
+  //   const byType = {
+  //     trafficViolation: 0,
+  //     trafficCongestion: 0,
+  //     irregularity: 0,
+  //     roadDamage: 0,
+  //     illegalParking: 0,
+  //     suggestion: 0,
+  //     generalReport: 0,
+  //   };
+
+  //   queries.forEach((query) => {
+  //     if (query.status === "Pending") byStatus.pending++;
+  //     else if (query.status === "In Progress") byStatus.inProgress++;
+  //     else if (query.status === "Resolved") byStatus.resolved++;
+  //     else if (query.status === "Rejected") byStatus.rejected++;
+
+  //     const typeKey =
+  //       query.query_type.replace(/\s+/g, "").charAt(0).toLowerCase() +
+  //       query.query_type.replace(/\s+/g, "").slice(1);
+  //     if (byType.hasOwnProperty(typeKey)) {
+  //       byType[typeKey]++;
+  //     } else {
+  //       if (query.query_type === "Traffic Violation") byType.trafficViolation++;
+  //       else if (query.query_type === "Traffic Congestion")
+  //         byType.trafficCongestion++;
+  //       else if (query.query_type === "Irregularity") byType.irregularity++;
+  //       else if (query.query_type === "Road Damage") byType.roadDamage++;
+  //       else if (query.query_type === "Illegal Parking")
+  //         byType.illegalParking++;
+  //       else if (query.query_type === "Suggestion") byType.suggestion++;
+  //       else if (query.query_type === "General Report") byType.generalReport++;
+  //     }
+  //   });
+
+  //   const total = queries.length;
+
+  //   setFilteredStats({
+  //     byStatus,
+  //     byType,
+  //     total,
+  //   });
+  // };
+
+  const calculateFilteredStats = () => {
+    if (!queries || !queries.length) {
+      console.log("No queries to calculate stats from");
+      return;
+    }
+  
+    console.log("Calculating filtered stats from", queries.length, "queries");
+  
     const byStatus = {
       pending: 0,
       inProgress: 0,
       resolved: 0,
       rejected: 0,
     };
-
+  
     const byType = {
       trafficViolation: 0,
       trafficCongestion: 0,
@@ -244,33 +306,39 @@ const QueryManagementPage = () => {
       suggestion: 0,
       generalReport: 0,
     };
-
+  
+    // Count query types and log them for debugging
+    const typeCounter = {};
+    
     queries.forEach((query) => {
+      // For status counting
       if (query.status === "Pending") byStatus.pending++;
       else if (query.status === "In Progress") byStatus.inProgress++;
       else if (query.status === "Resolved") byStatus.resolved++;
       else if (query.status === "Rejected") byStatus.rejected++;
-
-      const typeKey =
-        query.query_type.replace(/\s+/g, "").charAt(0).toLowerCase() +
-        query.query_type.replace(/\s+/g, "").slice(1);
-      if (byType.hasOwnProperty(typeKey)) {
-        byType[typeKey]++;
-      } else {
-        if (query.query_type === "Traffic Violation") byType.trafficViolation++;
-        else if (query.query_type === "Traffic Congestion")
-          byType.trafficCongestion++;
-        else if (query.query_type === "Irregularity") byType.irregularity++;
-        else if (query.query_type === "Road Damage") byType.roadDamage++;
-        else if (query.query_type === "Illegal Parking")
-          byType.illegalParking++;
-        else if (query.query_type === "Suggestion") byType.suggestion++;
-        else if (query.query_type === "General Report") byType.generalReport++;
+  
+      // For type counting - track in a simple object first for debugging
+      if (!typeCounter[query.query_type]) {
+        typeCounter[query.query_type] = 0;
       }
+      typeCounter[query.query_type]++;
+  
+      // For the actual counts
+      if (query.query_type === "Traffic Violation") byType.trafficViolation++;
+      else if (query.query_type === "Traffic Congestion") byType.trafficCongestion++;
+      else if (query.query_type === "Irregularity") byType.irregularity++;
+      else if (query.query_type === "Road Damage") byType.roadDamage++;
+      else if (query.query_type === "Illegal Parking") byType.illegalParking++;
+      else if (query.query_type === "Suggestion") byType.suggestion++;
+      else if (query.query_type === "General Report") byType.generalReport++;
     });
-
+  
+    // Log the count of each type for debugging
+    console.log("Type counts:", typeCounter);
+    console.log("Calculated irregularity count:", byType.irregularity);
+  
     const total = queries.length;
-
+  
     setFilteredStats({
       byStatus,
       byType,
@@ -682,7 +750,11 @@ const QueryManagementPage = () => {
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           <QueryStatusChart stats={filteredStats.byStatus} />
-          <QueryTypeDistribution stats={filteredStats.byType} division_admin={true}/>
+          <QueryTypeDistribution 
+            stats={filteredStats.byType} 
+            division_admin={true}
+            loading={loading} 
+          />
           <QueryTrends
             className="lg:col-span-2"
             timelineActive={timelineActive}
