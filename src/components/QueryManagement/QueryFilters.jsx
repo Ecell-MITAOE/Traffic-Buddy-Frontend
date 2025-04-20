@@ -51,9 +51,9 @@ const QueryFilters = ({searchTerm, handleSearch, selectedType, handleTypeFilter,
               </option>
               <option
                 className="bg-primary hover:bg-hovPrimary"
-                value="Accident"
+                value="Irregularity"
               >
-                Accident
+                Irregularity
               </option>
               <option
                 className="bg-primary hover:bg-hovPrimary"

@@ -16,7 +16,7 @@ const QueryTypeDistribution = ({ stats, division_admin=true}) => {
   const data = [
     { name: "Traffic Violation", value: stats?.trafficViolation || 0 },
     { name: "Traffic Congestion", value: stats?.trafficCongestion || 0 },
-    { name: "Accident", value: stats?.accident || 0 },
+    { name: "Irregularity", value: stats?.irregularity || 0 },
     // { name: "Road Damage", value: stats?.roadDamage || 0 },
     { name: "Illegal Parking", value: stats?.illegalParking || 0 },
     // { name: "Suggestion", value: stats?.suggestion || 0 },
