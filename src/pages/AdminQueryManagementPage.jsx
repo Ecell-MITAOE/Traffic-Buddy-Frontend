@@ -76,7 +76,7 @@ const AdminQueryManagementPage = () => {
     byType: {
       trafficViolation: 0,
       trafficCongestion: 0,
-      accident: 0,
+      irregularity: 0,
       roadDamage: 0,
       illegalParking: 0,
       suggestion: 0,
@@ -95,7 +95,7 @@ const AdminQueryManagementPage = () => {
     byType: {
       trafficViolation: 0,
       trafficCongestion: 0,
-      accident: 0,
+      irregularity: 0,
       roadDamage: 0,
       illegalParking: 0,
       suggestion: 0,
@@ -201,7 +201,7 @@ const AdminQueryManagementPage = () => {
     const byType = {
       trafficViolation: 0,
       trafficCongestion: 0,
-      accident: 0,
+      irregularity: 0,
       roadDamage: 0,
       illegalParking: 0,
       trafficSignalIssue: 0,
@@ -224,7 +224,7 @@ const AdminQueryManagementPage = () => {
         if (query.query_type === "Traffic Violation") byType.trafficViolation++;
         else if (query.query_type === "Traffic Congestion")
           byType.trafficCongestion++;
-        else if (query.query_type === "Accident") byType.accident++;
+        else if (query.query_type === "Irregularity") byType.irregularity++;
         else if (query.query_type === "Road Damage") byType.roadDamage++;
         else if (query.query_type === "Illegal Parking")
           byType.illegalParking++;
@@ -894,9 +894,9 @@ const AdminQueryManagementPage = () => {
                   </option>
                   <option
                     className="bg-primary hover:bg-hovPrimary"
-                    value="Accident"
+                    value="Irregularity"
                   >
-                    Accident
+                    Irregularity
                   </option>
                   <option
                     className="bg-primary hover:bg-hovPrimary"
