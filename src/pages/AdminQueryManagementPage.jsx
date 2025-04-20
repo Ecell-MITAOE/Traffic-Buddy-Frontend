@@ -1380,7 +1380,7 @@ const AdminQueryManagementPage = () => {
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <h3 className="text-sm font-medium text-gray-400">
                     Location Address:
                   </h3>
@@ -1398,6 +1398,31 @@ const AdminQueryManagementPage = () => {
                   >
                     <MapPin size={16} className="mr-1" /> View on Google Maps
                   </button>
+                </div> */}
+
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400">
+                    Location Address:
+                  </h3>
+                  <p className="text-gray-200">
+                    {detailsData.location?.address || "No address available"}
+                  </p>
+                  {detailsData.location?.latitude && detailsData.location?.longitude ? (
+                    <button
+                      className="mt-2 flex items-center text-blue-400 hover:text-blue-300"
+                      onClick={() =>
+                        openInGoogleMaps(
+                          detailsData.location.latitude,
+                          detailsData.location.longitude
+                        )
+                      }
+                    >
+                      <MapPin size={16} className="mr-1" /> View on Google Maps
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-400 mt-1">No location coordinates available</p>
+                  )}
                 </div>
 
                 {detailsData.resolution_note && (
