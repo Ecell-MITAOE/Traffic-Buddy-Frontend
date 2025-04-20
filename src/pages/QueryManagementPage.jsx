@@ -1071,21 +1071,30 @@ const QueryManagementPage = () => {
               </div>
 
               <div className="mt-4 space-y-4">
-                {detailsData.photo_url && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-2">
-                      Photo Evidence:
-                    </h3>
-                    <div className="flex justify-center">
-                      <img
-                        src={detailsData.photo_url}
-                        alt="Report evidence"
-                        className="rounded-lg object-contain max-w-full"
-                        style={{ maxHeight: "400px" }}
-                      />
-                    </div>
-                  </div>
-                )}
+              {detailsData.photo_url && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400 mb-2">
+                    Photo Evidence:
+                  </h3>
+                  <a 
+                    href={detailsData.photo_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    title="Click to view full size"
+                    className="block"
+                  >
+                    <img
+                      src={detailsData.photo_url}
+                      alt="Report evidence"
+                      className="rounded-lg object-contain max-w-full mx-auto border border-borderPrimary cursor-pointer hover:opacity-90 transition-opacity"
+                      style={{ maxHeight: "400px" }}
+                    />
+                    <p className="text-xs text-center text-blue-400 mt-1">
+                      Click to view full size image
+                    </p>
+                  </a>
+                </div>
+              )}
 
                 <div>
                   <h3 className="text-sm font-medium text-gray-400">
