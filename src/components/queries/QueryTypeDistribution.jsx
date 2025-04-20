@@ -11,15 +11,32 @@ import {
 import { motion } from "framer-motion";
 import Themes, { getCurrentTheme } from "../../assets/Themes";
 
-const QueryTypeDistribution = ({ stats, division_admin=true}) => {
+const QueryTypeDistribution = ({ stats, division_admin=true, loading=false }) => {
+  // If loading or stats is undefined, show a loading state
+  if (loading || !stats) {
+    return (
+      <motion.div
+        className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration:0.5 }}
+      >
+        <h2 className="text-xl font-semibold text-tBase mb-4">
+          Query Type Distribution
+        </h2>
+        <div className="flex justify-center items-center" style={{ height: "300px" }}>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </motion.div>
+    );
+  }
+  
   // Transform stats object into array format for Recharts
   const data = [
     { name: "Traffic Violation", value: stats?.trafficViolation || 0 },
     { name: "Traffic Congestion", value: stats?.trafficCongestion || 0 },
     { name: "Irregularity", value: stats?.irregularity || 0 },
-    // { name: "Road Damage", value: stats?.roadDamage || 0 },
     { name: "Illegal Parking", value: stats?.illegalParking || 0 },
-    // { name: "Suggestion", value: stats?.suggestion || 0 },
     { name: "General Report", value: stats?.generalReport || 0 },
   ];
 
@@ -61,9 +78,9 @@ const QueryTypeDistribution = ({ stats, division_admin=true}) => {
               width={95}
             />
             <Tooltip
-                    cursor={{
-                      fill:Themes[getCurrentTheme()]["hovPrimary"],
-                    }}
+              cursor={{
+                fill:Themes[getCurrentTheme()]["hovPrimary"],
+              }}
               contentStyle={{
                 backgroundColor: Themes[getCurrentTheme()]["bgPrimary"],
                 opacity: "80%",
