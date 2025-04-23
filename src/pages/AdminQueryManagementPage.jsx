@@ -64,6 +64,7 @@ const AdminQueryManagementPage = () => {
   const [isAggregate, setIsAggregate] = useState(true);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [departments, setDepartments] = useState([]);
+  const [resolverName, setResolverName] = useState("");
 
   // Original query stats (all data)
   const [queryStats, setQueryStats] = useState({
@@ -669,31 +670,47 @@ const AdminQueryManagementPage = () => {
     e.preventDefault();
     setRejectError("");
     setRejectSuccess("");
-  
-    if (rejectMessage.trim() === "") {
-      setRejectError("Please provide rejection reason");
+    
+    // Validate that name is provided
+    if (!resolverName.trim()) {
+      setRejectError("Please enter your name");
       return;
     }
-  
+    
     setRejectLoading(true);
-  
+    
     try {
-      await axios.put(`${backendUrl}/api/queries/${selectedQueryForReject._id}/status`, {
-        status: "Rejected",
-        resolution_note: rejectMessage
-      });
-  
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(
+        `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "Rejected",
+            resolution_note: rejectMessage,
+            resolver_name: resolverName,
+          }),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update query");
+      }
+      
       setRejectSuccess("Query rejected successfully!");
       setTimeout(() => {
         setRejectModalOpen(false);
+        setRejectMessage("");
+        setResolverName("");
         fetchQueries();
-        if (viewDetailsId === selectedQueryForReject._id) {
-          fetchQueryDetails(selectedQueryForReject._id);
-        }
-      }, 1500);
+      }, 2000);
     } catch (error) {
-      console.error("Error rejecting query:", error);
-      setRejectError(error.response?.data?.message || "Something went wrong. Please try again.");
+      setRejectError(error.message || "Failed to reject query");
     } finally {
       setRejectLoading(false);
     }
@@ -780,73 +797,52 @@ const AdminQueryManagementPage = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
-
-    if (message.trim() === "") {
-      setError("Please provide resolution notes");
+    
+    // Validate that name is provided
+    if (!resolverName.trim()) {
+      setError("Please enter your name");
       return;
     }
-
+    
     setIsLoading(true);
-
+    
+    const formData = new FormData();
+    formData.append("status", "Resolved");
+    formData.append("resolution_note", message);
+    formData.append("resolver_name", resolverName);
+    
+    if (image) {
+      formData.append("image", image);
+    }
+    
     try {
-      const formData = new FormData();
-      formData.append("status", "Resolved");
-      formData.append("resolution_note", message);
-      if (image) formData.append("image", image);
-
-      console.log(
-        "Submitting to:",
-        `${backendUrl}/api/reports/${selectedQueryForResolve._id}/resolve`
-      );
-      console.log("FormData contents:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-
+      const token = localStorage.getItem("authToken");
       const response = await fetch(
-        `${backendUrl}/api/reports/${selectedQueryForResolve._id}/resolve`,
+        `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
         {
-          method: "POST",
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         }
       );
-
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (jsonError) {
-        throw new Error(
-          `Server response is not valid JSON: ${responseText.substring(
-            0,
-            100
-          )}...`
-        );
-      }
-
+      
       if (!response.ok) {
-        throw new Error(
-          responseData.message || `HTTP error! Status: ${response.status}`
-        );
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update query");
       }
-
-      if (responseData.success) {
-        setSuccess("Report updated successfully!");
+      
+      setSuccess("Query resolved successfully!");
+      setTimeout(() => {
+        setResolveModalOpen(false);
         setMessage("");
         setImage(null);
-        setResolveModalOpen(false);
+        setResolverName("");
         fetchQueries();
-        if (viewDetailsId === selectedQueryForResolve._id) {
-          fetchQueryDetails(selectedQueryForResolve._id);
-        }
-      } else {
-        throw new Error(responseData.message || "Failed to update report");
-      }
+      }, 2000);
     } catch (error) {
-      console.error("Error in handleResolveSubmit:", error);
-      setError(error.message || "Something went wrong. Please try again.");
+      setError(error.message || "Failed to resolve query");
     } finally {
       setIsLoading(false);
     }
@@ -1522,6 +1518,17 @@ const AdminQueryManagementPage = () => {
                   </div>
                 )}
 
+                {detailsData && detailsData.resolved_by && detailsData.resolved_by.name && (
+                  <div className="mt-3">
+                    <h5>Resolution Information</h5>
+                    <p><strong>Resolved by:</strong> {detailsData.resolved_by.name}</p>
+                    <p><strong>Resolved on:</strong> {formatDate(detailsData.resolved_at)}</p>
+                    {detailsData.resolved_by.ip_address && (
+                      <p><small className="text-muted">Device IP: {detailsData.resolved_by.ip_address}</small></p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-3 mt-6">
                   <button
                     className="bg-blue-600 hover:bg-blue-700 text-tBase px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1742,6 +1749,20 @@ const AdminQueryManagementPage = () => {
                   </div>
                 )}
 
+                <div className="mb-3">
+                  <label htmlFor="resolverName" className="form-label">
+                    Your Name (required)
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="resolverName"
+                    value={resolverName}
+                    onChange={(e) => setResolverName(e.target.value)}
+                    required
+                  />
+                </div>
+
                 <div className="rounded-md -space-y-px">
                   <div className="mb-5">
                     <label
@@ -1928,6 +1949,20 @@ const AdminQueryManagementPage = () => {
                       </div>
                     </div>
                   )}
+
+                  <div className="mb-3">
+                    <label htmlFor="resolverName" className="form-label">
+                      Your Name (required)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="resolverName"
+                      value={resolverName}
+                      onChange={(e) => setResolverName(e.target.value)}
+                      required
+                    />
+                  </div>
 
                   <div className="rounded-md -space-y-px">
                     <div className="mb-5">
