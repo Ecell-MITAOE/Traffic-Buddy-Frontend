@@ -600,31 +600,55 @@ const QueryManagementPage = () => {
     
     setIsLoading(true);
     
-    const formData = new FormData();
-    formData.append("status", "Resolved");
-    formData.append("resolution_note", message);
-    formData.append("resolver_name", resolverName);
-    
-    if (image) {
-      formData.append("image", image);
-    }
-    
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update query");
+      // If no image is being uploaded, use simple JSON
+      if (!image) {
+        const response = await fetch(
+          `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
+          {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              status: "Resolved",
+              resolution_note: message,
+              resolver_name: resolverName
+            })
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to update query");
+        }
+      } else {
+        // For image uploads, use FormData
+        const formData = new FormData();
+        formData.append("status", "Resolved");
+        formData.append("resolution_note", message);
+        formData.append("resolver_name", resolverName);
+        formData.append("image", image);
+        
+        const response = await fetch(
+          `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
+          {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`
+              // Don't set Content-Type with FormData
+            },
+            body: formData
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to update query");
+        }
       }
       
       setSuccess("Query resolved successfully!");
