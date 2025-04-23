@@ -1749,18 +1749,28 @@ const AdminQueryManagementPage = () => {
                   </div>
                 )}
 
-                <div className="mb-3">
-                  <label htmlFor="resolverName" className="form-label">
+              <div className="rounded-md -space-y-px">
+                <div className="mb-5">
+                  <label
+                    htmlFor="resolverName"
+                    className="block text-sm font-medium text-gray-400 mb-1"
+                  >
                     Your Name (required)
                   </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="resolverName"
-                    value={resolverName}
-                    onChange={(e) => setResolverName(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="resolverName"
+                      name="resolverName"
+                      value={resolverName}
+                      onChange={(e) => setResolverName(e.target.value)}
+                      className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm"
+                      placeholder="Enter your name"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                </div>
                 </div>
 
                 <div className="rounded-md -space-y-px">
