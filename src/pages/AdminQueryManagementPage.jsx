@@ -11,6 +11,7 @@ import {
   Calendar,
   Download,
   Mic,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -909,7 +910,7 @@ const AdminQueryManagementPage = () => {
             endDate={endDate}
           />
           <motion.div
-            className="flex flex-col gap-4 mb-8"
+            className="flex flex-col gap-3 mb-8" // Changed gap-4 to gap-3 to save space
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -920,24 +921,32 @@ const AdminQueryManagementPage = () => {
               value={filteredStats.total.toLocaleString()}
               color="#6366F1"
             />
-            <StatCard
-              name="Pending Queries"
-              icon={Clock}
-              value={filteredStats.byStatus?.pending || 0}
-              color="#F59E0B"
-            />
-            <StatCard
-              name="In Progress"
-              icon={AlertTriangle}
-              value={filteredStats.byStatus?.inProgress || 0}
-              color="#3B82F6"
-            />
-            <StatCard
-              name="Resolved"
-              icon={Check}
-              value={filteredStats.byStatus?.resolved || 0}
-              color="#10B981"
-            />
+            <div className="grid grid-cols-2 gap-3"> {/* Create a 2-column grid for the remaining cards */}
+              <StatCard
+                name="Pending"
+                icon={Clock}
+                value={filteredStats.byStatus?.pending || 0}
+                color="#F59E0B"
+              />
+              <StatCard
+                name="In Progress"
+                icon={AlertTriangle}
+                value={filteredStats.byStatus?.inProgress || 0}
+                color="#3B82F6"
+              />
+              <StatCard
+                name="Resolved"
+                icon={Check}
+                value={filteredStats.byStatus?.resolved || 0}
+                color="#10B981"
+              />
+              <StatCard
+                name="Rejected"
+                icon={X} // Need to import X from lucide-react at the top
+                value={filteredStats.byStatus?.rejected || 0}
+                color="#EF4444"
+              />
+            </div>
           </motion.div>
         </div>
 
