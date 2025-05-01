@@ -1595,7 +1595,7 @@ const QueryManagementPage = () => {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm"
-                        placeholder="Enter resolution details or use voice input"
+                        placeholder="Enter resolution details"
                         disabled={isLoading}
                         rows="4"
                       />
