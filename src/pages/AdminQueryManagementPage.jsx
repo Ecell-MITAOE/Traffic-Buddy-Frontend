@@ -1888,7 +1888,7 @@ const AdminQueryManagementPage = () => {
                         disabled={isLoading}
                         rows="4"
                       />
-                      <button
+                      {/* <button
                         type="button"
                         onClick={isListening ? stopListening : startListening}
                         disabled={isLoading}
@@ -1899,7 +1899,7 @@ const AdminQueryManagementPage = () => {
                         } text-tBase focus:outline-none focus:ring-2 focus:ring-secondary`}
                       >
                         <Mic size={20} />
-                      </button>
+                      </button> */}
                     </div>
                     {isListening && (
                       <p className="text-sm text-blue-400 mt-1">Listening...</p>
