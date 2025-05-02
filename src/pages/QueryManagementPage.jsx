@@ -1699,7 +1699,7 @@ const QueryManagementPage = () => {
                 <button
                   className="text-gray-400 hover:text-tBase"
                   onClick={() => {
-                    stopRejectListening(); // Stop listening when closing the modal
+                  // Stop listening when closing the modal
                     setRejectModalOpen(false);
                   }}
                 >
