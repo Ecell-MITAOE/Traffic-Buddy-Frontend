@@ -2103,7 +2103,7 @@ const AdminQueryManagementPage = () => {
                         disabled={rejectLoading}
                         rows="4"
                       />
-                      <button
+                      {/* <button
                         type="button"
                         onClick={isRejectListening ? stopRejectListening : startRejectListening}
                         disabled={rejectLoading}
@@ -2114,7 +2114,7 @@ const AdminQueryManagementPage = () => {
                         } text-tBase focus:outline-none focus:ring-2 focus:ring-secondary`}
                       >
                         <Mic size={20} />
-                      </button>
+                      </button> */}
                     </div>
                     {isRejectListening && (
                       <p className="text-sm text-blue-400 mt-1">Listening...</p>
