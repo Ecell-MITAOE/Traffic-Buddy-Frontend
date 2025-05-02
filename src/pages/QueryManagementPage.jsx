@@ -1822,9 +1822,9 @@ const QueryManagementPage = () => {
                         <Mic size={20} />
                       </button> */}
                     </div>
-                    {isRejectListening && (
+                    {/* {isRejectListening && (
                       <p className="text-sm text-blue-400 mt-1">Listening...</p>
-                    )}
+                    )} */}
                   </div>
                 </div>
 
