@@ -118,7 +118,8 @@ const AdminOverviewPage = () => {
             roadDamage: queryTypesData.find(item => item.name === "Road Damage")?.value || 0,
             illegalParking: queryTypesData.find(item => item.name === "Illegal Parking")?.value || 0,
             suggestion: queryTypesData.find(item => item.name === "Suggestion")?.value || 0,
-            trafficsignalissue: queryTypesData.find(item => item.name === "Traffic Signal Issue")?.value || 0,},
+            trafficsignalissue: queryTypesData.find(item => item.name === "Traffic Signal Issue")?.value || 0,
+          },
           total: summaryRes.data.data.totalQueries || 0,
         });
         setRecentActivity(allRecentActivities);
