@@ -106,14 +106,7 @@ const AdminOverviewPage = () => {
         setDashboardData(summaryRes.data.data || {});
       
         setRecentActivity(allRecentActivities);
-        // console.log(
-        //   "Total recent activities fetched:",
-        //   allRecentActivities.length
-        // );
-        // console.log(
-        //   "Total queries from summary:",
-        //   summaryRes.data.data.totalQueries
-        // );
+        
         if (allRecentActivities.length > 0) {
           //console.log("Sample recent activity:", allRecentActivities[0]);
         }
