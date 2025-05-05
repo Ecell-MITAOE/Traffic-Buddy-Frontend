@@ -8,6 +8,10 @@ import CategoryDistributionChart from "../components/overview/CategoryDistributi
 import TwoValueRadialChart from "../components/overview/TwoValueRadialChart";
 import AverageResolutionTimeChart from '../components/adminOverview/AverageResolutionTimeChart';
 
+import QueryStatusChart from "../components/queries/QueryStatusChart";
+import QueryTypeDistribution from "../components/queries/QueryTypeDistribution";
+import QueryTrends from "../components/queries/QueryTrends";
+
 import InfractionsByDivisionChart from "../components/adminOverview/InfractionsByDivisionChart";
 import HorizontalBarChart from "../components/adminOverview/HorizontalBarChart";
 
@@ -30,6 +34,27 @@ const AdminOverviewPage = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [timelineActive, setTimelineActive] = useState(false);
+  const [filteredStats, setFilteredStats] = useState({
+    byStatus: {
+      pending: 0,
+      inProgress: 0,
+      resolved: 0,
+      rejected: 0,
+    },
+    byType: {
+      trafficViolation: 0,
+      trafficCongestion: 0,
+      irregularity: 0,
+      roadDamage: 0,
+      illegalParking: 0,
+      suggestion: 0,
+      trafficsignalissue: 0,
+    },
+    total: 0,
+  });
 
   const transitionDuration = 1;
   const transitionDelay = 0.2;
@@ -79,6 +104,23 @@ const AdminOverviewPage = () => {
         const [summaryRes] = await Promise.all(dashboardPromises);
 
         setDashboardData(summaryRes.data.data || {});
+        setFilteredStats({
+          byStatus: summaryRes.data.data.queryStatus || {
+            pending: 0,
+            inProgress: 0,
+            resolved: 0,
+            rejected: 0,
+          },
+          byType: {
+            trafficViolation: queryTypesData.find(item => item.name === "Traffic Violation")?.value || 0,
+            trafficCongestion: queryTypesData.find(item => item.name === "Traffic Congestion")?.value || 0,
+            irregularity: queryTypesData.find(item => item.name === "Irregularity")?.value || 0,
+            roadDamage: queryTypesData.find(item => item.name === "Road Damage")?.value || 0,
+            illegalParking: queryTypesData.find(item => item.name === "Illegal Parking")?.value || 0,
+            suggestion: queryTypesData.find(item => item.name === "Suggestion")?.value || 0,
+            trafficsignalissue: queryTypesData.find(item => item.name === "Traffic Signal Issue")?.value || 0,},
+          total: summaryRes.data.data.totalQueries || 0,
+        });
         setRecentActivity(allRecentActivities);
         // console.log(
         //   "Total recent activities fetched:",
@@ -469,6 +511,39 @@ const AdminOverviewPage = () => {
             {dashboardData.totalQueries || 0}
           </div>
         </div>
+      </motion.div>
+
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: transitionDuration,
+          delay: transitionDelay * 2.2,
+        }}
+      >
+        <QueryStatusChart stats={filteredStats.byStatus} />
+        <QueryTypeDistribution 
+          stats={filteredStats.byType} 
+          division_admin={true}
+          loading={loading} 
+        />
+      </motion.div>
+
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: transitionDuration,
+          delay: transitionDelay * 2.3,
+        }}
+      >
+        <QueryTrends
+          timelineActive={timelineActive}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </motion.div>
 
       <motion.div

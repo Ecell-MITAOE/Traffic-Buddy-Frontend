@@ -958,7 +958,7 @@ const AdminQueryManagementPage = () => {
       <Header title="Query Management" />
 
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           <QueryStatusChart stats={filteredStats.byStatus} />
           <QueryTypeDistribution 
             stats={filteredStats.byType} 
@@ -983,7 +983,7 @@ const AdminQueryManagementPage = () => {
               value={filteredStats.total.toLocaleString()}
               color="#6366F1"
             />
-            <div className="grid grid-cols-2 gap-3"> {/* Create a 2-column grid for the remaining cards */}
+            <div className="grid grid-cols-2 gap-3"> 
               <StatCard
                 name="Pending"
                 icon={Clock}
@@ -1010,7 +1010,7 @@ const AdminQueryManagementPage = () => {
               />
             </div>
           </motion.div>
-        </div>
+        </div> */}
 
         <motion.div
           className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary mb-8"
