@@ -51,7 +51,7 @@ const AdminOverviewPage = () => {
       roadDamage: 0,
       illegalParking: 0,
       suggestion: 0,
-      generalReport: 0,
+      trafficsignalissue: 0,
     },
     total: 0,
   });
@@ -104,24 +104,7 @@ const AdminOverviewPage = () => {
         const [summaryRes] = await Promise.all(dashboardPromises);
 
         setDashboardData(summaryRes.data.data || {});
-        setFilteredStats({
-          byStatus: summaryRes.data.data.queryStatus || {
-            pending: 0,
-            inProgress: 0,
-            resolved: 0,
-            rejected: 0,
-          },
-          byType: {
-            trafficViolation: queryTypesData.find(item => item.name === "Traffic Violation")?.value || 0,
-            trafficCongestion: queryTypesData.find(item => item.name === "Traffic Congestion")?.value || 0,
-            irregularity: queryTypesData.find(item => item.name === "Irregularity")?.value || 0,
-            roadDamage: queryTypesData.find(item => item.name === "Road Damage")?.value || 0,
-            illegalParking: queryTypesData.find(item => item.name === "Illegal Parking")?.value || 0,
-            suggestion: queryTypesData.find(item => item.name === "Suggestion")?.value || 0,
-            generalReport: queryTypesData.find(item => item.name === "General Report")?.value || 0,
-          },
-          total: summaryRes.data.data.totalQueries || 0,
-        });
+      
         setRecentActivity(allRecentActivities);
         // console.log(
         //   "Total recent activities fetched:",
@@ -145,6 +128,37 @@ const AdminOverviewPage = () => {
 
     fetchData();
   }, [backendUrl]);
+
+
+  useEffect(() => {
+    if (!dashboardData) return;
+    
+    // First transform the data (same as your existing code)
+    const queryTypesData = dashboardData.queryTypes?.map((item) => ({
+      name: item._id,
+      value: item.count,
+    })) || [];
+  
+    // Now set the filteredStats after we have the queryTypesData
+    setFilteredStats({
+      byStatus: dashboardData.queryStatus || {
+        pending: 0,
+        inProgress: 0,
+        resolved: 0,
+        rejected: 0,
+      },
+      byType: {
+        trafficViolation: queryTypesData.find(item => item.name === "Traffic Violation")?.value || 0,
+        trafficCongestion: queryTypesData.find(item => item.name === "Traffic Congestion")?.value || 0,
+        irregularity: queryTypesData.find(item => item.name === "Irregularity")?.value || 0,
+        roadDamage: queryTypesData.find(item => item.name === "Road Damage")?.value || 0,
+        illegalParking: queryTypesData.find(item => item.name === "Illegal Parking")?.value || 0,
+        suggestion: queryTypesData.find(item => item.name === "Suggestion")?.value || 0,
+        trafficsignalissue: queryTypesData.find(item => item.name === "Traffic Signal Issue")?.value || 0,
+      },
+      total: dashboardData.totalQueries || 0,
+    });
+  }, [dashboardData]);
 
   // Transform existing dashboard data
   const queryTypesData =
