@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { FileSearch, Clock, AlertTriangle, Check, X } from "lucide-react";
 import axios from "axios";
 
 import Header from "../components/common/Header";
@@ -11,6 +12,7 @@ import AverageResolutionTimeChart from '../components/adminOverview/AverageResol
 import QueryStatusChart from "../components/queries/QueryStatusChart";
 import QueryTypeDistribution from "../components/queries/QueryTypeDistribution";
 import QueryTrends from "../components/queries/QueryTrends";
+import StatCard from "../components/common/StatCard";
 
 import InfractionsByDivisionChart from "../components/adminOverview/InfractionsByDivisionChart";
 import HorizontalBarChart from "../components/adminOverview/HorizontalBarChart";
@@ -536,6 +538,51 @@ const AdminOverviewPage = () => {
           division_admin={true}
           loading={loading} 
         />
+      </motion.div>
+
+      <motion.div
+        className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-borderPrimary mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: transitionDuration,
+          delay: transitionDelay * 2.25,
+        }}
+      >
+        <div className="flex flex-col gap-3 mb-4">
+          <StatCard
+            name="Total Queries"
+            icon={FileSearch}
+            value={filteredStats.total.toLocaleString()}
+            color="#6366F1"
+          />
+          <div className="grid grid-cols-2 gap-3"> 
+            <StatCard
+              name="Pending"
+              icon={Clock}
+              value={filteredStats.byStatus?.pending || 0}
+              color="#F59E0B"
+            />
+            <StatCard
+              name="In Progress"
+              icon={AlertTriangle}
+              value={filteredStats.byStatus?.inProgress || 0}
+              color="#3B82F6"
+            />
+            <StatCard
+              name="Resolved"
+              icon={Check}
+              value={filteredStats.byStatus?.resolved || 0}
+              color="#10B981"
+            />
+            <StatCard
+              name="Rejected"
+              icon={X}
+              value={filteredStats.byStatus?.rejected || 0}
+              color="#EF4444"
+            />
+          </div>
+        </div>
       </motion.div>
 
       <motion.div

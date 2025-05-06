@@ -50,7 +50,7 @@ const LoginPage = ({ setter }) => {
         console.log("Redirection");
         //navigate('/overview', { replace: true });
         window.location.href =
-          username === "Admin" ? "/adminoverview" : "/overview";
+          username === "Admin" ? "/adminQueryManagement" : "/overview";
       } else {
         throw new Error(response.message || "Login failed");
       }
