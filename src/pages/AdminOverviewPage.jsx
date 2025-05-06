@@ -453,8 +453,24 @@ const AdminOverviewPage = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-auto relative z-10 flex items-center justify-center">
-        <div className="text-tBase text-xl">Loading dashboard data...</div>
+      <div className="flex-1 overflow-auto relative z-10 flex flex-col items-center justify-center h-screen bg-bgPrimary">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-t-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-12 h-12 absolute top-1/2 left-1/2 -ml-6 -mt-6 border-4 border-t-4 border-green-400 border-t-transparent rounded-full animate-[spin_1.5s_linear_infinite]"></div>
+        </div>
+        <div className="mt-6 text-tBase text-lg font-medium animate-pulse">
+          Loading dashboard data...
+        </div>
+        <div className="mt-2 w-48 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-green-400 to-blue-500 rounded-full animate-[progressBar_2s_ease-in-out_infinite]"></div>
+        </div>
+        <style jsx>{`
+          @keyframes progressBar {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+          }
+        `}</style>
       </div>
     );
   }
