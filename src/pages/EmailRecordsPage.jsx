@@ -1,5 +1,3 @@
---- START OF FILE EmailRecordsPage.jsx ---
-
 import { useState, useEffect } from "react";
 import { AlertTriangle, Check, FileSearch, Mail, MapPin, Search, Calendar, Download, Filter } from "lucide-react"; // Added Filter icon
 import { motion } from "framer-motion";
