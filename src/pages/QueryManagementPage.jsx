@@ -588,84 +588,136 @@ const QueryManagementPage = () => {
     setCurrentPage(1);
   };
 
-  const handleResolveSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    
-    // Validate that name is provided
-    if (!resolverName.trim()) {
+  // Replace the handleResolveSubmit function with this improved version
+const handleResolveSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+  setIsLoading(true);
+  
+  try {
+    if (!resolverName) {
       setError("Please enter your name");
+      setIsLoading(false);
       return;
     }
     
-    setIsLoading(true);
+    const formData = new FormData();
+    formData.append("status", "Resolved");
+    formData.append("resolution_note", message);
+    formData.append("resolver_name", resolverName); // Make sure resolver name is included
     
-    try {
-      const token = localStorage.getItem("authToken");
-      
-      // If no image is being uploaded, use simple JSON
-      if (!image) {
-        const response = await fetch(
-          `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
-          {
-            method: "PUT",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              status: "Resolved",
-              resolution_note: message,
-              resolver_name: resolverName
-            })
-          }
-        );
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to update query");
-        }
-      } else {
-        // For image uploads, use FormData
-        const formData = new FormData();
-        formData.append("status", "Resolved");
-        formData.append("resolution_note", message);
-        formData.append("resolver_name", resolverName);
-        formData.append("image", image);
-        
-        const response = await fetch(
-          `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
-          {
-            method: "PUT",
-            headers: {
-              "Authorization": `Bearer ${token}`
-              // Don't set Content-Type with FormData
-            },
-            body: formData
-          }
-        );
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to update query");
-        }
-      }
-      
-      setSuccess("Query resolved successfully!");
-      setTimeout(() => {
-        setResolveModalOpen(false);
-        setMessage("");
-        setImage(null);
-        setResolverName("");
-        fetchQueries();
-      }, 2000);
-    } catch (error) {
-      setError(error.message || "Failed to resolve query");
-    } finally {
-      setIsLoading(false);
+    if (image) {
+      formData.append("resolution_image", image);
     }
-  };
+    
+    const token = localStorage.getItem("token");
+    const response = await fetch(
+      `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update query status");
+    }
+    
+    setSuccess("Query has been successfully resolved!");
+    
+    // Update the query in the list
+    setQueries(
+      queries.map((q) =>
+        q._id === selectedQueryForResolve._id
+          ? { ...q, status: "Resolved" }
+          : q
+      )
+    );
+    
+    // Close the modal after a short delay
+    setTimeout(() => {
+      setResolveModalOpen(false);
+      setMessage("");
+      setImage(null);
+      fetchQueries(); // Refresh the query list
+    }, 2000);
+    
+  } catch (error) {
+    console.error("Error resolving query:", error);
+    setError(error.message || "An error occurred");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// Similarly, update the handleRejectSubmit function
+const handleRejectSubmit = async (e) => {
+  e.preventDefault();
+  setRejectError("");
+  setRejectSuccess("");
+  setRejectLoading(true);
+  
+  try {
+    if (!resolverName) {
+      setRejectError("Please enter your name");
+      setRejectLoading(false);
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append("status", "Rejected");
+    formData.append("resolution_note", rejectMessage);
+    formData.append("resolver_name", resolverName); // Make sure resolver name is included
+    
+    const token = localStorage.getItem("token");
+    const response = await fetch(
+      `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update query status");
+    }
+    
+    setRejectSuccess("Query has been successfully rejected!");
+    
+    // Update the query in the list
+    setQueries(
+      queries.map((q) =>
+        q._id === selectedQueryForReject._id
+          ? { ...q, status: "Rejected" }
+          : q
+      )
+    );
+    
+    // Close the modal after a short delay
+    setTimeout(() => {
+      setRejectModalOpen(false);
+      setRejectMessage("");
+      fetchQueries(); // Refresh the query list
+    }, 2000);
+    
+  } catch (error) {
+    console.error("Error rejecting query:", error);
+    setRejectError(error.message || "An error occurred");
+  } finally {
+    setRejectLoading(false);
+  }
+};
 
   const openRejectModal = (query) => {
     setSelectedQueryForReject(query);
@@ -673,56 +725,6 @@ const QueryManagementPage = () => {
     setRejectMessage("");
     setRejectError("");
     setRejectSuccess("");
-  };
-  
-  const handleRejectSubmit = async (e) => {
-    e.preventDefault();
-    setRejectError("");
-    setRejectSuccess("");
-    
-    // Validate that name is provided
-    if (!resolverName.trim()) {
-      setRejectError("Please enter your name");
-      return;
-    }
-    
-    setRejectLoading(true);
-    
-    try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: "Rejected",
-            resolution_note: rejectMessage,
-            resolver_name: resolverName,
-          }),
-        }
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update query");
-      }
-      
-      setRejectSuccess("Query rejected successfully!");
-      setTimeout(() => {
-        setRejectModalOpen(false);
-        setRejectMessage("");
-        setResolverName("");
-        fetchQueries();
-      }, 2000);
-    } catch (error) {
-      setRejectError(error.message || "Failed to reject query");
-    } finally {
-      setRejectLoading(false);
-    }
   };
 
   const downloadAsExcel = async () => {

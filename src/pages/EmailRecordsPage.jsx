@@ -7,6 +7,24 @@ import Header from "../components/common/Header";
 
 const backendUrl = import.meta.env.VITE_Backend_URL || "http://localhost:3000";
 
+// Add divisions constant
+const divisions = [
+  { value: "MAHALUNGE", label: "Mahalunge", id: "67dac1a2a771ed87f82890b2" },
+  { value: "CHAKAN", label: "Chakan", id: "67dc019a6532e1c784d60840" },
+  { value: "DIGHI ALANDI", label: "Dighi-Alandi", id: "67db077dfa28812fe4f9573f" },
+  { value: "BHOSARI", label: "Bhosari", id: "67dc19f0a9ae16de2619b735" },
+  { value: "TALWADE", label: "Talwade", id: "67dac59365aca82fe28bb003" },
+  { value: "PIMPRI", label: "Pimpri", id: "67dc18f0a9ae16de2619b72c" },
+  { value: "CHINCHWAD", label: "Chinchwad", id: "67dc1a41a9ae16de2619b739" },
+  { value: "NIGDI", label: "Nigdi", id: "67dc184da9ae16de2619b728" },
+  { value: "SANGAVI", label: "Sangavi", id: "67dc198ea9ae16de2619b731" },
+  { value: "HINJEWADI", label: "Hinjewadi", id: "67dc19b7a9ae16de2619b733" },
+  { value: "WAKAD", label: "Wakad", id: "67dc189fa9ae16de2619b72a" },
+  { value: "BAVDHAN", label: "Bavdhan", id: "67dc1969a9ae16de2619b72f" },
+  { value: "DEHUROAD", label: "Dehuroad", id: "67dc1a22a9ae16de2619b737" },
+  { value: "TALEGAON", label: "Talegaon", id: "67dac3e9bb20f51c531c1509" },
+];
+
 const EmailRecordsPage = () => {
   const [emailRecords, setEmailRecords] = useState([]);
   const [groupedRecords, setGroupedRecords] = useState([]);
@@ -18,6 +36,8 @@ const EmailRecordsPage = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentYearMonth());
   const [queryDetailsMap, setQueryDetailsMap] = useState({});
+  // Add selected division state
+  const [selectedDivision, setSelectedDivision] = useState("");
   
   // For Excel export
   function getCurrentYearMonth() {
@@ -27,7 +47,7 @@ const EmailRecordsPage = () => {
 
   useEffect(() => {
     fetchEmailRecords();
-  }, [currentPage]);
+  }, [currentPage, selectedDivision]); // Add selectedDivision as dependency
 
   useEffect(() => {
     if (emailRecords.length > 0) {
@@ -42,6 +62,7 @@ const EmailRecordsPage = () => {
         params: {
           page: currentPage,
           limit: 50, // Get more records to allow for proper grouping
+          division: selectedDivision || undefined, // Add division filter parameter
         },
       });
       
@@ -62,6 +83,12 @@ const EmailRecordsPage = () => {
       setLoading(false);
       console.error("Error fetching email records:", error);
     }
+  };
+
+  // Handle division change
+  const handleDivisionChange = (e) => {
+    setSelectedDivision(e.target.value);
+    setCurrentPage(1); // Reset to first page when changing division
   };
 
   const fetchQueryDetailsForIds = async (queryIds) => {
@@ -161,6 +188,7 @@ const EmailRecordsPage = () => {
           startDate: startDateStr,
           endDate: endDateStr,
           limit: 1000, // Get a large batch
+          division: selectedDivision || undefined, // Add division filter to export
         },
       });
       
@@ -257,7 +285,8 @@ const EmailRecordsPage = () => {
         
         // Generate Excel file
         const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
-        const fileName = `TrafficBuddy_EmailRecords_${monthName}_${year}.xlsx`;
+        const divisionText = selectedDivision ? `_${selectedDivision}` : '';
+        const fileName = `TrafficBuddy_EmailRecords_${monthName}_${year}${divisionText}.xlsx`;
         XLSX.writeFile(workbook, fileName);
         
         setExportLoading(false);
@@ -283,9 +312,29 @@ const EmailRecordsPage = () => {
             <h2 className="text-xl font-semibold text-tBase">Email Records</h2>
             
             <div className="flex space-x-4">
+              {/* Add Division Filter Dropdown */}
+              <div className="flex items-center">
+                <label htmlFor="division-select" className="text-sm text-gray-400 mr-2">
+                  Division:
+                </label>
+                <select
+                  id="division-select"
+                  value={selectedDivision}
+                  onChange={handleDivisionChange}
+                  className="bg-bgPrimary border border-borderPrimary rounded-md px-3 py-1 text-sm"
+                >
+                  <option value="">All Divisions</option>
+                  {divisions.map((division) => (
+                    <option key={division.id} value={division.label}>
+                      {division.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
               <div className="flex items-center">
                 <label htmlFor="month-select" className="text-sm text-gray-400 mr-2">
-                  Select Month:
+                  Month:
                 </label>
                 <input 
                   type="month" 
