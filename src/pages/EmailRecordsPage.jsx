@@ -54,19 +54,31 @@ const EmailRecordsPage = () => {
     }
   }, [emailRecords]);
 
-  const fetchEmailRecords = async (pageToFetch = 1) => { // Default to page 1
+  useEffect(() => {
+    console.log("Division filter changed to:", selectedDivision);
+  }, [selectedDivision]);
+
+  const fetchEmailRecords = async (pageToFetch = 1) => {
     setLoading(true);
     try {
       const [year, monthVal] = selectedMonth.split('-');
       const startDate = new Date(year, parseInt(monthVal) - 1, 1).toISOString().split('T')[0];
       const endDate = new Date(year, parseInt(monthVal), 0).toISOString().split('T')[0];
-      const token = localStorage.getItem("token");
-
+      
+      // Use authToken instead of token
+      const token = localStorage.getItem("authToken");
+      
+      if (!token) {
+        alert("Authentication token not found. Please log in again.");
+        setLoading(false);
+        return;
+      }
+  
       const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
         params: {
           page: pageToFetch,
-          limit: 10, // For UI pagination
-          division: selectedDivision || undefined, // Pass label (e.g., "Sangavi") or undefined for "All Divisions"
+          limit: 10,
+          division: selectedDivision || undefined,
           startDate: startDate,
           endDate: endDate,
         },
@@ -76,28 +88,26 @@ const EmailRecordsPage = () => {
       });
       
       if (response.data.success) {
-        setEmailRecords(response.data.data); // Data is now filtered by backend
+        setEmailRecords(response.data.data);
         setTotalPages(response.data.totalPages);
-        // setCurrentPage(pageToFetch); // Not needed here, currentPage state already reflects this
         
         const uniqueQueryIds = [...new Set(response.data.data.map(record => record.queryId).filter(id => id))];
         if (uniqueQueryIds.length > 0) {
           fetchQueryDetailsForIds(uniqueQueryIds);
         } else {
-          setQueryDetailsMap({}); // Reset if no queries
+          setQueryDetailsMap({});
         }
       } else {
         console.error("Error fetching email records:", response.data.message);
-        setEmailRecords([]); // Clear records on error
+        setEmailRecords([]);
         setTotalPages(1);
       }
     } catch (error) {
       console.error("Error fetching email records:", error);
-      setEmailRecords([]); // Clear records on error
+      setEmailRecords([]);
       setTotalPages(1);
       if (error.response && error.response.status === 401) {
         alert("Session expired or unauthorized. Please log in again.");
-        // Consider redirecting to login page
       }
     } finally {
       setLoading(false);
@@ -105,16 +115,23 @@ const EmailRecordsPage = () => {
   };
 
   const handleDivisionChange = (e) => {
-    setSelectedDivision(e.target.value); // e.g., "Sangavi"
-    setCurrentPage(1); // Reset to first page when division changes
+    const newDivision = e.target.value;
+    console.log("Selected division changed to:", newDivision);
+    setSelectedDivision(newDivision);
+    setCurrentPage(1);
   };
 
   const fetchQueryDetailsForIds = async (queryIds) => {
-    const detailsMap = { ...queryDetailsMap }; // Preserve existing details
-    const token = localStorage.getItem("token");
+    const detailsMap = { ...queryDetailsMap };
+    // Use authToken instead of token
+    const token = localStorage.getItem("authToken");
+    
+    if (!token) {
+      return; // Skip if no token
+    }
     
     for (const id of queryIds) {
-      if (!detailsMap[id]) { // Fetch only if not already present
+      if (!detailsMap[id]) {
         try {
           const response = await axios.get(`${backendUrl}/api/queries/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -168,11 +185,19 @@ const EmailRecordsPage = () => {
       const [year, monthVal] = selectedMonth.split('-');
       const startDateStr = new Date(year, parseInt(monthVal) - 1, 1).toISOString().split('T')[0];
       const endDateStr = new Date(year, parseInt(monthVal), 0).toISOString().split('T')[0];
-      const token = localStorage.getItem("token");
+      
+      // Use authToken instead of token
+      const token = localStorage.getItem("authToken");
+      
+      if (!token) {
+        alert("Authentication token not found. Please log in again.");
+        setExportLoading(false);
+        return;
+      }
       
       const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
         params: {
-          limit: 0, // Fetch all records for export (backend handles limit=0 as no limit)
+          limit: 0, // Fetch all records for export
           startDate: startDateStr,
           endDate: endDateStr,
           division: selectedDivision || undefined,
@@ -270,26 +295,37 @@ const EmailRecordsPage = () => {
   };
 
   const fetchQueryDetails = async (id) => {
-    setViewDetailsId(id); // Optimistically set for modal opening
+    setViewDetailsId(id);
     if (queryDetailsMap[id]) {
       setDetailsData(queryDetailsMap[id]);
       return;
     }
-    // If not in map, fetch it (though fetchQueryDetailsForIds should have caught it)
+    
     try {
-      const token = localStorage.getItem("token");
+      // Use authToken instead of token
+      const token = localStorage.getItem("authToken");
+      
+      if (!token) {
+        alert("Authentication token not found. Please log in again.");
+        return;
+      }
+      
       const response = await axios.get(`${backendUrl}/api/queries/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
       if (response.data.success) {
         setDetailsData(response.data.data);
         setQueryDetailsMap(prevMap => ({ ...prevMap, [id]: response.data.data }));
       } else {
-         setDetailsData(null); // Clear if fetch fails
+        setDetailsData(null);
       }
     } catch (error) {
       console.error("Error fetching query details:", error);
       setDetailsData(null);
+      if (error.response && error.response.status === 401) {
+        alert("Session expired or unauthorized. Please log in again.");
+      }
     }
   };
 

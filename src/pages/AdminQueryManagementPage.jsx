@@ -806,7 +806,7 @@ const AdminQueryManagementPage = () => {
     }
   };
 
-  // ...existing code...
+  // Replace handleResolveSubmit function with this fixed version:
 const handleResolveSubmit = async (e) => {
   e.preventDefault();
   setError("");
@@ -820,68 +820,79 @@ const handleResolveSubmit = async (e) => {
       return;
     }
 
+    // Create FormData correctly
     const formData = new FormData();
     formData.append("status", "Resolved");
     formData.append("resolution_note", message);
     formData.append("resolver_name", resolverName);
-
+    
     if (image) {
       formData.append("resolution_image", image);
     }
 
-    const token = localStorage.getItem("authToken");  // Change "token" to "authToken"
+    // Get the token with the correct key
+    const token = localStorage.getItem("authToken");
     if (!token) {
       setError("Authentication token not found. Please log in again.");
       setIsLoading(false);
       return;
     }
+    
+    console.log("Sending resolution request:", {
+      queryId: selectedQueryForResolve._id,
+      status: "Resolved",
+      note: message.substring(0, 20) + "...",
+      resolver: resolverName
+    });
 
+    // Make the fetch request with proper headers
     const response = await fetch(
       `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
       {
         method: "PUT",
         headers: {
-          // Ensure the Authorization header is correctly set
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`
         },
         body: formData,
       }
     );
-
-    const data = await response.json();
-
+    
+    // Parse response only after checking if it's ok
     if (!response.ok) {
-      // Handle specific 401 error
-      if (response.status === 401) {
-        throw new Error(data.message || "Unauthorized: Invalid or expired token. Please log in again.");
-      }
-      throw new Error(data.message || "Failed to update query status");
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Server error: ${response.status}`);
     }
 
+    const data = await response.json();
+    
     setSuccess("Query has been successfully resolved!");
+    
+    // Update the query in the list (optimistic update)
     setQueries(
       queries.map((q) =>
         q._id === selectedQueryForResolve._id
-          ? { ...q, status: "Resolved", resolution_note: message, resolved_by: { name: resolverName }, resolution_image_url: data.data?.resolution_image_url } // Optimistically update UI
+          ? { ...q, status: "Resolved", resolution_note: message, resolved_by: { name: resolverName } }
           : q
       )
     );
+    
     setTimeout(() => {
       setResolveModalOpen(false);
       setMessage("");
       setImage(null);
-      setResolverName(""); // Clear resolver name
-      // fetchQueries(); // Optionally refetch or rely on optimistic update
+      setResolverName("");
+      fetchQueries(); // Refresh the queries
     }, 2000);
-
+    
   } catch (error) {
     console.error("Error resolving query:", error);
-    setError(error.message || "An error occurred");
+    setError(error.message || "An error occurred while updating the query");
   } finally {
     setIsLoading(false);
   }
 };
 
+// Replace handleRejectSubmit function:
 const handleRejectSubmit = async (e) => {
   e.preventDefault();
   setRejectError("");
@@ -895,57 +906,68 @@ const handleRejectSubmit = async (e) => {
       return;
     }
 
+    // Create FormData correctly
     const formData = new FormData();
     formData.append("status", "Rejected");
     formData.append("resolution_note", rejectMessage);
     formData.append("resolver_name", resolverName);
 
-    const token = localStorage.getItem("authToken");  // Change "token" to "authToken"
+    // Get the token with the correct key
+    const token = localStorage.getItem("authToken");
     if (!token) {
       setRejectError("Authentication token not found. Please log in again.");
       setRejectLoading(false);
       return;
     }
+    
+    console.log("Sending rejection request:", {
+      queryId: selectedQueryForReject._id,
+      status: "Rejected",
+      note: rejectMessage.substring(0, 20) + "...",
+      resolver: resolverName
+    });
 
+    // Make the fetch request
     const response = await fetch(
       `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
       {
         method: "PUT",
         headers: {
-          // Ensure the Authorization header is correctly set
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`
         },
         body: formData,
       }
     );
 
-    const data = await response.json();
-
+    // Parse response only after checking if it's ok
     if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error(data.message || "Unauthorized: Invalid or expired token. Please log in again.");
-      }
-      throw new Error(data.message || "Failed to update query status");
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Server error: ${response.status}`);
     }
 
+    const data = await response.json();
+    
     setRejectSuccess("Query has been successfully rejected!");
+    
+    // Update the query in the list (optimistic update)
     setQueries(
       queries.map((q) =>
         q._id === selectedQueryForReject._id
-          ? { ...q, status: "Rejected", resolution_note: rejectMessage, resolved_by: { name: resolverName } } // Optimistically update UI
+          ? { ...q, status: "Rejected", resolution_note: rejectMessage, resolved_by: { name: resolverName } }
           : q
       )
     );
+    
     setTimeout(() => {
       setRejectModalOpen(false);
       setRejectMessage("");
-      setResolverName(""); // Clear resolver name
-      // fetchQueries(); // Optionally refetch
+      setResolverName("");
+      fetchQueries(); // Refresh the queries
     }, 2000);
-
+    
   } catch (error) {
     console.error("Error rejecting query:", error);
-    setRejectError(error.message || "An error occurred");
+    setRejectError(error.message || "An error occurred while updating the query");
   } finally {
     setRejectLoading(false);
   }
