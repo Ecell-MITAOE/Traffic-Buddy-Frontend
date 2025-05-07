@@ -829,7 +829,7 @@ const handleResolveSubmit = async (e) => {
       formData.append("resolution_image", image);
     }
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");  // Change "token" to "authToken"
     if (!token) {
       setError("Authentication token not found. Please log in again.");
       setIsLoading(false);
@@ -900,7 +900,7 @@ const handleRejectSubmit = async (e) => {
     formData.append("resolution_note", rejectMessage);
     formData.append("resolver_name", resolverName);
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");  // Change "token" to "authToken"
     if (!token) {
       setRejectError("Authentication token not found. Please log in again.");
       setRejectLoading(false);
