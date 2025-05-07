@@ -588,74 +588,69 @@ const QueryManagementPage = () => {
     setCurrentPage(1);
   };
 
-  const handleResolveSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setIsLoading(true);
-  
-    try {
-      if (!resolverName) {
-        setError("Please enter your name");
-        setIsLoading(false);
-        return;
+  // Replace handleResolveSubmit function with this:
+const handleResolveSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+  setIsLoading(true);
+
+  try {
+    if (!resolverName) {
+      setError("Please enter your name");
+      setIsLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Authentication token not found. Please log in again.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Create a regular FormData object
+    const formData = new FormData();
+    formData.append("status", "Resolved"); 
+    formData.append("resolution_note", message);
+    formData.append("resolver_name", resolverName);
+    
+    if (image) {
+      formData.append("resolution_image", image);
+    }
+    
+    console.log("Submitting form with data:", {
+      status: "Resolved",
+      note_length: message.length,
+      resolver: resolverName,
+      has_image: !!image
+    });
+
+    // Use axios instead of fetch for more consistent behavior
+    const response = await axios({
+      method: 'put',
+      url: `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
+      data: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
       }
-  
-      // Get the token with the correct key
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("Authentication token not found. Please log in again.");
-        setIsLoading(false);
-        return;
-      }
-  
-      // Create FormData correctly
-      const formData = new FormData();
-      
-      // Explicitly set status as string
-      formData.append("status", "Resolved");
-      formData.append("resolution_note", message);
-      formData.append("resolver_name", resolverName);
-  
-      if (image) {
-        formData.append("resolution_image", image);
-      }
-      
-      console.log("Submitting form with data:", {
-        status: "Resolved",
-        note_length: message.length,
-        resolver: resolverName,
-        has_image: !!image
-      });
-  
-      // Send as form-data with proper headers
-      const response = await fetch(
-        `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            'Authorization': `Bearer ${token}`
-            // Don't set Content-Type header - browser will set it automatically with boundary
-          },
-          body: formData
-        }
-      );
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server error response:", errorData);
-        throw new Error(errorData.message || `Server error: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      
+    });
+
+    if (response.data.success) {
       setSuccess("Query has been successfully resolved!");
       
-      // Update the list optimistically
+      // Update the query in the list
       setQueries(
         queries.map((q) =>
           q._id === selectedQueryForResolve._id
-            ? { ...q, status: "Resolved", resolution_note: message, resolved_by: { name: resolverName } }
+            ? { 
+                ...q, 
+                status: "Resolved", 
+                resolution_note: message, 
+                resolved_by: { name: resolverName },
+                resolution_image_url: response.data.data?.resolution_image_url 
+              }
             : q
         )
       );
@@ -666,80 +661,76 @@ const QueryManagementPage = () => {
         setImage(null);
         setResolverName("");
         fetchQueries();
+        fetchQueryStats();
       }, 2000);
-      
-    } catch (error) {
-      console.error("Error resolving query:", error);
-      setError(error.message || "An error occurred");
-    } finally {
-      setIsLoading(false);
+    } else {
+      throw new Error(response.data.message || "Failed to update query status");
     }
-  };
-  
-  // Similarly update handleRejectSubmit
-  const handleRejectSubmit = async (e) => {
-    e.preventDefault();
-    setRejectError("");
-    setRejectSuccess("");
-    setRejectLoading(true);
-  
-    try {
-      if (!resolverName) {
-        setRejectError("Please enter your name");
-        setRejectLoading(false);
-        return;
+  } catch (error) {
+    console.error("Error resolving query:", error);
+    setError(error.response?.data?.message || error.message || "An error occurred while updating the query");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// Replace handleRejectSubmit function with this:
+const handleRejectSubmit = async (e) => {
+  e.preventDefault();
+  setRejectError("");
+  setRejectSuccess("");
+  setRejectLoading(true);
+
+  try {
+    if (!resolverName) {
+      setRejectError("Please enter your name");
+      setRejectLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setRejectError("Authentication token not found. Please log in again.");
+      setRejectLoading(false);
+      return;
+    }
+
+    // Create a regular FormData object
+    const formData = new FormData();
+    formData.append("status", "Rejected");
+    formData.append("resolution_note", rejectMessage);
+    formData.append("resolver_name", resolverName);
+    
+    console.log("Submitting form with data:", {
+      status: "Rejected",
+      note_length: rejectMessage.length,
+      resolver: resolverName
+    });
+
+    // Use axios instead of fetch for more consistent behavior
+    const response = await axios({
+      method: 'put',
+      url: `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
+      data: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
       }
-  
-      // Get the token with the correct key
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setRejectError("Authentication token not found. Please log in again.");
-        setRejectLoading(false);
-        return;
-      }
-  
-      // Create FormData correctly
-      const formData = new FormData();
-      
-      // Explicitly set status as string
-      formData.append("status", "Rejected");
-      formData.append("resolution_note", rejectMessage);
-      formData.append("resolver_name", resolverName);
-      
-      console.log("Submitting form with data:", {
-        status: "Rejected",
-        note_length: rejectMessage.length,
-        resolver: resolverName
-      });
-  
-      // Send as form-data with proper headers
-      const response = await fetch(
-        `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            'Authorization': `Bearer ${token}`
-            // Don't set Content-Type header - browser will set it automatically with boundary
-          },
-          body: formData
-        }
-      );
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server error response:", errorData);
-        throw new Error(errorData.message || `Server error: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      
+    });
+
+    if (response.data.success) {
       setRejectSuccess("Query has been successfully rejected!");
       
-      // Update the list optimistically
+      // Update the query in the list
       setQueries(
         queries.map((q) =>
           q._id === selectedQueryForReject._id
-            ? { ...q, status: "Rejected", resolution_note: rejectMessage, resolved_by: { name: resolverName } }
+            ? { 
+                ...q, 
+                status: "Rejected", 
+                resolution_note: rejectMessage, 
+                resolved_by: { name: resolverName } 
+              }
             : q
         )
       );
@@ -749,15 +740,18 @@ const QueryManagementPage = () => {
         setRejectMessage("");
         setResolverName("");
         fetchQueries();
+        fetchQueryStats();
       }, 2000);
-      
-    } catch (error) {
-      console.error("Error rejecting query:", error);
-      setRejectError(error.message || "An error occurred");
-    } finally {
-      setRejectLoading(false);
+    } else {
+      throw new Error(response.data.message || "Failed to update query status");
     }
-  };
+  } catch (error) {
+    console.error("Error rejecting query:", error);
+    setRejectError(error.response?.data?.message || error.message || "An error occurred while updating the query");
+  } finally {
+    setRejectLoading(false);
+  }
+};
 
   const openRejectModal = (query) => {
     setSelectedQueryForReject(query);
