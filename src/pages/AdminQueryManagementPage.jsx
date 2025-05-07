@@ -806,172 +806,179 @@ const AdminQueryManagementPage = () => {
     }
   };
 
-  // Replace handleResolveSubmit function with this fixed version:
-const handleResolveSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setSuccess("");
-  setIsLoading(true);
-
-  try {
-    if (!resolverName) {
-      setError("Please enter your name");
-      setIsLoading(false);
-      return;
-    }
-
-    // Create FormData correctly
-    const formData = new FormData();
-    formData.append("status", "Resolved");
-    formData.append("resolution_note", message);
-    formData.append("resolver_name", resolverName);
-    
-    if (image) {
-      formData.append("resolution_image", image);
-    }
-
-    // Get the token with the correct key
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setError("Authentication token not found. Please log in again.");
-      setIsLoading(false);
-      return;
-    }
-    
-    console.log("Sending resolution request:", {
-      queryId: selectedQueryForResolve._id,
-      status: "Resolved",
-      note: message.substring(0, 20) + "...",
-      resolver: resolverName
-    });
-
-    // Make the fetch request with proper headers
-    const response = await fetch(
-      `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
-      {
-        method: "PUT",
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
+  const handleResolveSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setIsLoading(true);
+  
+    try {
+      if (!resolverName) {
+        setError("Please enter your name");
+        setIsLoading(false);
+        return;
       }
-    );
-    
-    // Parse response only after checking if it's ok
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Server error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    
-    setSuccess("Query has been successfully resolved!");
-    
-    // Update the query in the list (optimistic update)
-    setQueries(
-      queries.map((q) =>
-        q._id === selectedQueryForResolve._id
-          ? { ...q, status: "Resolved", resolution_note: message, resolved_by: { name: resolverName } }
-          : q
-      )
-    );
-    
-    setTimeout(() => {
-      setResolveModalOpen(false);
-      setMessage("");
-      setImage(null);
-      setResolverName("");
-      fetchQueries(); // Refresh the queries
-    }, 2000);
-    
-  } catch (error) {
-    console.error("Error resolving query:", error);
-    setError(error.message || "An error occurred while updating the query");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-// Replace handleRejectSubmit function:
-const handleRejectSubmit = async (e) => {
-  e.preventDefault();
-  setRejectError("");
-  setRejectSuccess("");
-  setRejectLoading(true);
-
-  try {
-    if (!resolverName) {
-      setRejectError("Please enter your name");
-      setRejectLoading(false);
-      return;
-    }
-
-    // Create FormData correctly
-    const formData = new FormData();
-    formData.append("status", "Rejected");
-    formData.append("resolution_note", rejectMessage);
-    formData.append("resolver_name", resolverName);
-
-    // Get the token with the correct key
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setRejectError("Authentication token not found. Please log in again.");
-      setRejectLoading(false);
-      return;
-    }
-    
-    console.log("Sending rejection request:", {
-      queryId: selectedQueryForReject._id,
-      status: "Rejected",
-      note: rejectMessage.substring(0, 20) + "...",
-      resolver: resolverName
-    });
-
-    // Make the fetch request
-    const response = await fetch(
-      `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
-      {
-        method: "PUT",
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
+  
+      // Create FormData correctly
+      const formData = new FormData();
+      formData.append("status", "Resolved");
+      formData.append("resolution_note", message);
+      formData.append("resolver_name", resolverName);
+      
+      if (image) {
+        formData.append("resolution_image", image);
       }
-    );
-
-    // Parse response only after checking if it's ok
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Server error: ${response.status}`);
+  
+      // Get the token with the correct key
+      const token = localStorage.getItem("authToken");
+      console.log("Auth Token for Resolve API:", token ? `Token starts with: ${token.substring(0, 15)}...` : "TOKEN_NOT_FOUND_IN_LOCALSTORAGE");
+  
+      if (!token || typeof token !== 'string' || token.trim() === '') {
+        setError("Authentication token not found or invalid. Please log in again.");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Sending resolution request:", {
+        queryId: selectedQueryForResolve._id,
+        status: "Resolved",
+        note: message.substring(0, 20) + "...",
+        resolver: resolverName
+      });
+  
+      // Make the fetch request with proper headers
+      const response = await fetch(
+        `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${token.trim()}` // Added .trim()
+          },
+          body: formData,
+        }
+      );
+      
+      // Parse response only after checking if it's ok
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server responded with error:", response.status, errorData);
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      
+      setSuccess("Query has been successfully resolved!");
+      
+      // Update the query in the list (optimistic update)
+      setQueries(
+        queries.map((q) =>
+          q._id === selectedQueryForResolve._id
+            ? { ...q, status: "Resolved", resolution_note: message, resolved_by: { name: resolverName } }
+            : q
+        )
+      );
+      
+      setTimeout(() => {
+        setResolveModalOpen(false);
+        setMessage("");
+        setImage(null);
+        setResolverName("");
+        fetchQueries(); // Refresh the queries
+        fetchQueryStats(); // Also refresh stats
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Error resolving query:", error);
+      setError(error.message || "An error occurred while updating the query");
+    } finally {
+      setIsLoading(false);
     }
+  };
+  
 
-    const data = await response.json();
-    
-    setRejectSuccess("Query has been successfully rejected!");
-    
-    // Update the query in the list (optimistic update)
-    setQueries(
-      queries.map((q) =>
-        q._id === selectedQueryForReject._id
-          ? { ...q, status: "Rejected", resolution_note: rejectMessage, resolved_by: { name: resolverName } }
-          : q
-      )
-    );
-    
-    setTimeout(() => {
-      setRejectModalOpen(false);
-      setRejectMessage("");
-      setResolverName("");
-      fetchQueries(); // Refresh the queries
-    }, 2000);
-    
-  } catch (error) {
-    console.error("Error rejecting query:", error);
-    setRejectError(error.message || "An error occurred while updating the query");
-  } finally {
-    setRejectLoading(false);
-  }
-};
+  const handleRejectSubmit = async (e) => {
+    e.preventDefault();
+    setRejectError("");
+    setRejectSuccess("");
+    setRejectLoading(true);
+  
+    try {
+      if (!resolverName) {
+        setRejectError("Please enter your name");
+        setRejectLoading(false);
+        return;
+      }
+  
+      // Create FormData correctly
+      const formData = new FormData();
+      formData.append("status", "Rejected");
+      formData.append("resolution_note", rejectMessage);
+      formData.append("resolver_name", resolverName);
+  
+      // Get the token with the correct key
+      const token = localStorage.getItem("authToken");
+      console.log("Auth Token for Reject API:", token ? `Token starts with: ${token.substring(0, 15)}...` : "TOKEN_NOT_FOUND_IN_LOCALSTORAGE");
+  
+      if (!token || typeof token !== 'string' || token.trim() === '') {
+        setRejectError("Authentication token not found or invalid. Please log in again.");
+        setRejectLoading(false);
+        return;
+      }
+      
+      console.log("Sending rejection request:", {
+        queryId: selectedQueryForReject._id,
+        status: "Rejected",
+        note: rejectMessage.substring(0, 20) + "...",
+        resolver: resolverName
+      });
+  
+      // Make the fetch request
+      const response = await fetch(
+        `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${token.trim()}` // Added .trim()
+          },
+          body: formData,
+        }
+      );
+  
+      // Parse response only after checking if it's ok
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server responded with error:", response.status, errorData);
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      
+      setRejectSuccess("Query has been successfully rejected!");
+      
+      // Update the query in the list (optimistic update)
+      setQueries(
+        queries.map((q) =>
+          q._id === selectedQueryForReject._id
+            ? { ...q, status: "Rejected", resolution_note: rejectMessage, resolved_by: { name: resolverName } }
+            : q
+        )
+      );
+      
+      setTimeout(() => {
+        setRejectModalOpen(false);
+        setRejectMessage("");
+        setResolverName("");
+        fetchQueries(); // Refresh the queries
+        fetchQueryStats(); // Also refresh stats
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Error rejecting query:", error);
+      setRejectError(error.message || "An error occurred while updating the query");
+    } finally {
+      setRejectLoading(false);
+    }
+  };
 
   const applyAction = () => {
     if (!detailsSelectedStatus) {
