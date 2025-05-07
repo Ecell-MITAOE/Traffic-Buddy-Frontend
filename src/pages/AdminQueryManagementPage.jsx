@@ -1905,7 +1905,7 @@ const AdminQueryManagementPage = () => {
                       <p className="text-sm text-blue-400 mt-1">Listening...</p>
                     )}
                   </div>
-                  <div className="mb-5">
+                  {/* <div className="mb-5">
                     <label
                       htmlFor="image"
                       className="block text-sm font-medium text-gray-400 mb-1"
@@ -1921,7 +1921,7 @@ const AdminQueryManagementPage = () => {
                       className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-tBase hover:file:bg-blue-700"
                       disabled={isLoading}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 <div>
