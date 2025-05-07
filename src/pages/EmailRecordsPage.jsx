@@ -243,130 +243,134 @@ const EmailRecordsPage = () => {
   const exportToExcel = async () => {
     setExportLoading(true);
     try {
-      const [year, month] = selectedMonth.split('-');
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0, 23, 59, 59, 999); // Ensure end of day
+        const [year, month] = selectedMonth.split('-');
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
 
-      const params = {
-        startDate: startDateStr,
-        endDate: endDateStr,
-        limit: 10000, // Fetch a large number for export
-      };
-      // Add division filter if selected
-      if (selectedDivisionFilter) {
-        params.division = selectedDivisionFilter;
-      }
+        // *** CORE CHANGE: Ensure params for export respect the filter ***
+        const params = {
+            startDate: startDateStr,
+            endDate: endDateStr,
+            limit: 10000, // Fetch all matching records for the month/division
+        };
+        // *** ADD DIVISION FILTER TO EXPORT API CALL ***
+        if (selectedDivisionFilter) {
+            params.division = selectedDivisionFilter;
+        }
 
-      console.log("Exporting with params:", params);
+        console.log("Exporting Email Records with params:", params); // Log the parameters used for the export fetch
 
-      const response = await axios.get(`${backendUrl}/api/queries/email-records`, { params });
+        // Fetch specifically filtered records for export
+        const response = await axios.get(`${backendUrl}/api/queries/email-records`, { params });
 
-      if (response.data.success) {
-        const recordsToExport = response.data.data;
-        console.log(`Fetched ${recordsToExport.length} records for export.`);
+        if (response.data.success && response.data.data.length > 0) {
+            const recordsToExport = response.data.data;
+            console.log(`Fetched ${recordsToExport.length} records for export.`);
 
-        // Fetch all necessary query details concurrently
-        const uniqueQueryIds = [...new Set(recordsToExport.map(record => record.queryId).filter(id => id))];
-        const exportDetailsMap = { ...queryDetailsMap }; // Start with cached details
-        const idsToFetch = uniqueQueryIds.filter(id => !exportDetailsMap[id]);
+            // Fetch details ONLY for the queries in the filtered export data
+            const uniqueQueryIds = [...new Set(recordsToExport.map(record => record.queryId).filter(id => id))];
+            const exportDetailsMap = { ...queryDetailsMap }; // Use existing cache
+            const idsToFetch = uniqueQueryIds.filter(id => !exportDetailsMap[id]);
 
-        if (idsToFetch.length > 0) {
-            console.log(`Fetching details for ${idsToFetch.length} queries for export...`);
-            const detailPromises = idsToFetch.map(id =>
-                axios.get(`${backendUrl}/api/queries/${id}`)
+            if (idsToFetch.length > 0) {
+                console.log(`Fetching details for ${idsToFetch.length} new queries for export...`);
+                const detailPromises = idsToFetch.map(id =>
+                    axios.get(`${backendUrl}/api/queries/${id}`)
                     .then(res => {
-                        if (res.data.success) exportDetailsMap[id] = res.data.data;
+                        if (res.data.success) {
+                             // Update local map directly for immediate use
+                             exportDetailsMap[id] = res.data.data;
+                        }
                     })
                     .catch(err => console.error(`Export detail fetch error for ${id}:`, err))
-            );
-            await Promise.all(detailPromises);
-             // Update main cache as well
-            setQueryDetailsMap(prevMap => ({...prevMap, ...exportDetailsMap}));
+                );
+                await Promise.all(detailPromises);
+                // Optionally update state cache if desired, but not strictly needed for export itself
+                // setQueryDetailsMap(prevMap => ({...prevMap, ...exportDetailsMap}));
+            }
+
+            // Group the **filtered** records fetched for export
+            const groupedDataForExport = {};
+            recordsToExport.forEach(record => {
+                if (!record || !record.queryId || !record.departmentName || !record.emails || !record._id) return;
+                const key = `${record.queryId}_${record.departmentName}`;
+                if (!groupedDataForExport[key]) {
+                    groupedDataForExport[key] = {
+                        queryId: record.queryId,
+                        departmentName: record.departmentName,
+                        subject: record.subject || "No Subject",
+                        sentAt: record.sentAt || new Date().toISOString(),
+                        division: record.division || "Unknown",
+                        emailList: new Set([record.emails]),
+                        status: record.status || "sent"
+                    };
+                } else {
+                    groupedDataForExport[key].emailList.add(record.emails);
+                    if (new Date(record.sentAt) > new Date(groupedDataForExport[key].sentAt)) {
+                        groupedDataForExport[key].sentAt = record.sentAt;
+                    }
+                    if (record.status === 'failed') groupedDataForExport[key].status = 'failed';
+                }
+            });
+
+            // Prepare data for SheetJS
+            const excelData = Object.values(groupedDataForExport).map((item, index) => {
+                const queryDetails = exportDetailsMap[item.queryId] || {}; // Use details fetched/cached for export
+                let location = queryDetails.location?.address || "N/A";
+
+                return {
+                    "Sr. No.": index + 1,
+                    "Department": item.departmentName,
+                    "Division": item.division,
+                    "Subject": item.subject,
+                    "Email List": Array.from(item.emailList).join(", "),
+                    "Sent At": formatDate(item.sentAt),
+                    "Status": item.status,
+                    "Query Type": queryDetails.query_type || "N/A",
+                    "Description": queryDetails.description || "N/A",
+                    "Location": location,
+                    "Reported By": queryDetails.user_name || "N/A",
+                    "Contact": queryDetails.user_id ? queryDetails.user_id.replace(/whatsapp:\+?/i, "") : "N/A",
+                    "Reported On": queryDetails.timestamp ? formatDate(queryDetails.timestamp) : "N/A",
+                    "Current Status": queryDetails.status || "N/A"
+                };
+            });
+
+            // Generate and download Excel
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const columnWidths = [ /* ... (keep your column widths) ... */
+                { wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 35 }, { wch: 45 },
+                { wch: 22 }, { wch: 10 }, { wch: 20 }, { wch: 45 }, { wch: 45 },
+                { wch: 20 }, { wch: 18 }, { wch: 22 }, { wch: 15 }
+             ];
+            worksheet['!cols'] = columnWidths;
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Email Records");
+            const monthName = startDate.toLocaleString('default', { month: 'long' });
+            let fileName = `TrafficBuddy_EmailRecords_${monthName}_${year}`;
+            if (selectedDivisionFilter) {
+                fileName += `_${selectedDivisionFilter}`;
+            }
+            fileName += `.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+
+        } else if (!response.data.success) {
+             console.error("API error fetching records for export:", response.data.message);
+             alert(`Failed to fetch records for export: ${response.data.message}`);
+        } else {
+            console.log("No records found for the selected criteria for export.");
+            alert(`No email records found for ${selectedMonth}${selectedDivisionFilter ? ' in ' + selectedDivisionFilter + ' division' : ''} to export.`);
         }
-
-
-        // Group records by query ID and department
-        const groupedDataForExport = {};
-        recordsToExport.forEach(record => {
-           if (!record || !record.queryId || !record.departmentName || !record.emails || !record._id) return; // Skip bad data
-           const key = `${record.queryId}_${record.departmentName}`;
-           if (!groupedDataForExport[key]) {
-              groupedDataForExport[key] = {
-                 queryId: record.queryId,
-                 departmentName: record.departmentName,
-                 subject: record.subject || "No Subject",
-                 sentAt: record.sentAt || new Date().toISOString(),
-                 division: record.division || "Unknown",
-                 emailList: new Set([record.emails]), // Use Set for uniqueness
-                 status: record.status || "sent"
-              };
-           } else {
-              groupedDataForExport[key].emailList.add(record.emails);
-              if (new Date(record.sentAt) > new Date(groupedDataForExport[key].sentAt)) {
-                 groupedDataForExport[key].sentAt = record.sentAt;
-              }
-              // Update status logic if needed (e.g., prioritize 'failed')
-              if (record.status === 'failed') groupedDataForExport[key].status = 'failed';
-           }
-        });
-
-
-        const excelData = Object.values(groupedDataForExport).map((item, index) => {
-          const queryDetails = exportDetailsMap[item.queryId] || {};
-          let location = queryDetails.location?.address || "N/A";
-
-          return {
-            "Sr. No.": index + 1,
-            "Department": item.departmentName,
-            "Division": item.division,
-            "Subject": item.subject,
-            "Email List": Array.from(item.emailList).join(", "), // Convert Set back to string
-            "Sent At": formatDate(item.sentAt),
-            "Status": item.status,
-            "Query Type": queryDetails.query_type || "N/A",
-            "Description": queryDetails.description || "N/A",
-            "Location": location,
-            "Reported By": queryDetails.user_name || "N/A",
-            "Contact": queryDetails.user_id ? queryDetails.user_id.replace(/whatsapp:\+?/i, "") : "N/A",
-            "Reported On": queryDetails.timestamp ? formatDate(queryDetails.timestamp) : "N/A",
-            "Current Status": queryDetails.status || "N/A"
-          };
-        });
-
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        const columnWidths = [
-          { wch: 6 }, { wch: 15 }, { wch: 12 }, { wch: 30 }, { wch: 40 },
-          { wch: 20 }, { wch: 8 }, { wch: 15 }, { wch: 40 }, { wch: 40 },
-          { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 12 }
-        ];
-        worksheet['!cols'] = columnWidths;
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Email Records");
-
-        const monthName = startDate.toLocaleString('default', { month: 'long' });
-        let fileName = `TrafficBuddy_EmailRecords_${monthName}_${year}`;
-        if (selectedDivisionFilter) {
-            fileName += `_${selectedDivisionFilter}`; // Add division name to file if filtered
-        }
-        fileName += `.xlsx`;
-
-        XLSX.writeFile(workbook, fileName);
-
-      } else {
-          console.error("Failed to fetch records for export:", response.data.message);
-          alert("Failed to fetch records for export.");
-      }
     } catch (error) {
-      console.error("Error exporting to Excel:", error);
-      alert("An error occurred during export.");
+        console.error("Error exporting to Excel:", error);
+        alert("An error occurred during export. Please check console for details.");
     } finally {
-      setExportLoading(false);
+        setExportLoading(false);
     }
-  };
+};
 
   // Handler for division filter change
   const handleDivisionFilterChange = (e) => {
