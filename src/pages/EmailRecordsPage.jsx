@@ -55,35 +55,185 @@ const EmailRecordsPage = () => {
     }
   }, [emailRecords]);
 
-  const fetchEmailRecords = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
-        params: {
-          page: currentPage,
-          limit: 50, // Get more records to allow for proper grouping
-          division: selectedDivision || undefined, // Add division filter parameter
-        },
+  // First, update the fetchEmailRecords function
+const fetchEmailRecords = async () => {
+  setLoading(true);
+  try {
+    const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
+      params: {
+        page: currentPage,
+        limit: 50, // Get more records to allow for proper grouping
+        division: selectedDivision || undefined, // Add division filter parameter
+      },
+    });
+    
+    if (response.data.success) {
+      let records = response.data.data;
+      
+      // Filter records by division if selected, also excluding "Unknown" division
+      if (selectedDivision) {
+        records = records.filter(record => 
+          record.division === selectedDivision
+        );
+      }
+      
+      setEmailRecords(records);
+      setTotalPages(response.data.totalPages);
+      
+      // Fetch details for all unique query IDs
+      const uniqueQueryIds = [...new Set(records.map(record => record.queryId))];
+      fetchQueryDetailsForIds(uniqueQueryIds);
+      
+      setLoading(false);
+    } else {
+      setLoading(false);
+      console.error("Error fetching email records:", response.data.message);
+    }
+  } catch (error) {
+    setLoading(false);
+    console.error("Error fetching email records:", error);
+  }
+};
+
+// Next, update the exportToExcel function
+const exportToExcel = async () => {
+  setExportLoading(true);
+  try {
+    // Extract year and month from the selected value
+    const [year, month] = selectedMonth.split('-');
+    
+    // Construct date range for the selected month
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0); // Last day of the month
+    
+    // Format dates for API request
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    // Fetch email records for the selected month (all pages)
+    const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
+      params: {
+        startDate: startDateStr,
+        endDate: endDateStr,
+        limit: 1000, // Get a large batch
+        division: selectedDivision || undefined, // Add division filter to export
+      },
+    });
+    
+    if (response.data.success) {
+      // Filter records by division if selected
+      let recordsToExport = response.data.data;
+      
+      // Apply division filter on the client side as well
+      if (selectedDivision) {
+        recordsToExport = recordsToExport.filter(record => 
+          record.division === selectedDivision
+        );
+      }
+      
+      // Fetch all query details for the records to be exported
+      const uniqueQueryIds = [...new Set(recordsToExport.map(record => record.queryId))];
+      const exportDetailsMap = {};
+      
+      for (const id of uniqueQueryIds) {
+        try {
+          const response = await axios.get(`${backendUrl}/api/queries/${id}`);
+          if (response.data.success) {
+            exportDetailsMap[id] = response.data.data;
+          }
+        } catch (error) {
+          console.error(`Error fetching details for query ${id}:`, error);
+        }
+      }
+      
+      // Group records by query ID and department
+      const groupedRecords = {};
+      recordsToExport.forEach(record => {
+        const key = `${record.queryId}_${record.departmentName}`;
+        if (!groupedRecords[key]) {
+          groupedRecords[key] = {
+            queryId: record.queryId,
+            departmentName: record.departmentName,
+            subject: record.subject,
+            sentAt: formatDate(record.sentAt),
+            division: record.division || "Unknown",
+            emailList: [record.emails],
+            status: record.status || "sent"
+          };
+        } else if (!groupedRecords[key].emailList.includes(record.emails)) {
+          groupedRecords[key].emailList.push(record.emails);
+        }
       });
       
-      if (response.data.success) {
-        setEmailRecords(response.data.data);
-        setTotalPages(response.data.totalPages);
+      // Convert to array for Excel export
+      const excelData = Object.values(groupedRecords).map((item, index) => {
+        const queryDetails = exportDetailsMap[item.queryId] || {};
+        let location = "";
+        if (queryDetails.location && queryDetails.location.address) {
+          location = queryDetails.location.address;
+        }
         
-        // Fetch details for all unique query IDs
-        const uniqueQueryIds = [...new Set(response.data.data.map(record => record.queryId))];
-        fetchQueryDetailsForIds(uniqueQueryIds);
-        
-        setLoading(false);
-      } else {
-        setLoading(false);
-        console.error("Error fetching email records:", response.data.message);
-      }
-    } catch (error) {
-      setLoading(false);
-      console.error("Error fetching email records:", error);
+        return {
+          "Sr. No.": index + 1,
+          "Department": item.departmentName,
+          "Division": item.division,
+          "Subject": item.subject,
+          "Email List": item.emailList.join(", "),
+          "Sent At": item.sentAt,
+          "Status": item.status,
+          "Query Type": queryDetails.query_type || "",
+          "Description": queryDetails.description || "",
+          "Location": location,
+          "Reported By": queryDetails.user_name || "",
+          "Contact": queryDetails.user_id ? queryDetails.user_id.replace("whatsapp:", "") : "",
+          "Reported On": queryDetails.timestamp ? formatDate(queryDetails.timestamp) : "",
+          "Current Status": queryDetails.status || ""
+        };
+      });
+      
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths
+      const columnWidths = [
+        { wch: 6 },   // Sr. No.
+        { wch: 15 },  // Department
+        { wch: 12 },  // Division
+        { wch: 30 },  // Subject
+        { wch: 40 },  // Email List
+        { wch: 20 },  // Sent At
+        { wch: 8 },   // Status
+        { wch: 15 },  // Query Type
+        { wch: 40 },  // Description
+        { wch: 40 },  // Location
+        { wch: 15 },  // Reported By
+        { wch: 15 },  // Contact
+        { wch: 20 },  // Reported On
+        { wch: 12 }   // Current Status
+      ];
+      
+      worksheet['!cols'] = columnWidths;
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Email Records");
+      
+      // Generate Excel file
+      const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
+      const divisionText = selectedDivision ? `_${selectedDivision}` : '';
+      const fileName = `TrafficBuddy_EmailRecords_${monthName}_${year}${divisionText}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      
+      setExportLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Error exporting to Excel:", error);
+    setExportLoading(false);
+  }
+};
+
+// Finally, we need to update the backend endpoint to properly filter by division
+// This requires changes to the backend, but for now we'll handle it client-side
 
   // Handle division change
   const handleDivisionChange = (e) => {
@@ -166,135 +316,6 @@ const EmailRecordsPage = () => {
   const closeDetails = () => {
     setViewDetailsId(null);
     setDetailsData(null);
-  };
-
-  const exportToExcel = async () => {
-    setExportLoading(true);
-    try {
-      // Extract year and month from the selected value
-      const [year, month] = selectedMonth.split('-');
-      
-      // Construct date range for the selected month
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0); // Last day of the month
-      
-      // Format dates for API request
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
-      
-      // Fetch email records for the selected month (all pages)
-      const response = await axios.get(`${backendUrl}/api/queries/email-records`, {
-        params: {
-          startDate: startDateStr,
-          endDate: endDateStr,
-          limit: 1000, // Get a large batch
-          division: selectedDivision || undefined, // Add division filter to export
-        },
-      });
-      
-      if (response.data.success) {
-        // Group the records
-        const recordsToExport = response.data.data;
-        
-        // Fetch all query details for the records to be exported
-        const uniqueQueryIds = [...new Set(recordsToExport.map(record => record.queryId))];
-        const exportDetailsMap = {};
-        
-        for (const id of uniqueQueryIds) {
-          try {
-            const response = await axios.get(`${backendUrl}/api/queries/${id}`);
-            if (response.data.success) {
-              exportDetailsMap[id] = response.data.data;
-            }
-          } catch (error) {
-            console.error(`Error fetching details for query ${id}:`, error);
-          }
-        }
-        
-        // Group records by query ID and department
-        const groupedRecords = {};
-        recordsToExport.forEach(record => {
-          const key = `${record.queryId}_${record.departmentName}`;
-          if (!groupedRecords[key]) {
-            groupedRecords[key] = {
-              queryId: record.queryId,
-              departmentName: record.departmentName,
-              subject: record.subject,
-              sentAt: formatDate(record.sentAt),
-              division: record.division || "Unknown",
-              emailList: [record.emails],
-              status: record.status || "sent"
-            };
-          } else if (!groupedRecords[key].emailList.includes(record.emails)) {
-            groupedRecords[key].emailList.push(record.emails);
-          }
-        });
-        
-        // Convert to array for Excel export
-        const excelData = Object.values(groupedRecords).map((item, index) => {
-          const queryDetails = exportDetailsMap[item.queryId] || {};
-          let location = "";
-          if (queryDetails.location && queryDetails.location.address) {
-            location = queryDetails.location.address;
-          }
-          
-          return {
-            "Sr. No.": index + 1,
-            "Department": item.departmentName,
-            "Division": item.division,
-            "Subject": item.subject,
-            "Email List": item.emailList.join(", "),
-            "Sent At": item.sentAt,
-            "Status": item.status,
-            "Query Type": queryDetails.query_type || "",
-            "Description": queryDetails.description || "",
-            "Location": location,
-            "Reported By": queryDetails.user_name || "",
-            "Contact": queryDetails.user_id ? queryDetails.user_id.replace("whatsapp:", "") : "",
-            "Reported On": queryDetails.timestamp ? formatDate(queryDetails.timestamp) : "",
-            "Current Status": queryDetails.status || ""
-          };
-        });
-        
-        // Create worksheet
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        
-        // Set column widths
-        const columnWidths = [
-          { wch: 6 },   // Sr. No.
-          { wch: 15 },  // Department
-          { wch: 12 },  // Division
-          { wch: 30 },  // Subject
-          { wch: 40 },  // Email List
-          { wch: 20 },  // Sent At
-          { wch: 8 },   // Status
-          { wch: 15 },  // Query Type
-          { wch: 40 },  // Description
-          { wch: 40 },  // Location
-          { wch: 15 },  // Reported By
-          { wch: 15 },  // Contact
-          { wch: 20 },  // Reported On
-          { wch: 12 }   // Current Status
-        ];
-        
-        worksheet['!cols'] = columnWidths;
-        
-        // Create workbook
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Email Records");
-        
-        // Generate Excel file
-        const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
-        const divisionText = selectedDivision ? `_${selectedDivision}` : '';
-        const fileName = `TrafficBuddy_EmailRecords_${monthName}_${year}${divisionText}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
-        
-        setExportLoading(false);
-      }
-    } catch (error) {
-      console.error("Error exporting to Excel:", error);
-      setExportLoading(false);
-    }
   };
 
   return (
