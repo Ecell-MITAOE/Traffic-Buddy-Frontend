@@ -601,46 +601,47 @@ const QueryManagementPage = () => {
         return;
       }
   
-      // Create FormData correctly
+      // Create FormData object
       const formData = new FormData();
+      
+      // Ensure correct capitalization of status value 
       formData.append("status", "Resolved");
       formData.append("resolution_note", message);
       formData.append("resolver_name", resolverName);
-      
+  
       if (image) {
         formData.append("resolution_image", image);
       }
   
       // Get the token with the correct key
       const token = localStorage.getItem("authToken");
-      console.log("Auth Token for Resolve API:", token ? `Token starts with: ${token.substring(0, 15)}...` : "TOKEN_NOT_FOUND_IN_LOCALSTORAGE");
       
-      if (!token || typeof token !== 'string' || token.trim() === '') {
-        setError("Authentication token not found or invalid. Please log in again.");
+      if (!token) {
+        setError("Authentication token not found. Please log in again.");
         setIsLoading(false);
         return;
       }
-      
-      console.log("Sending resolution request:", {
-        queryId: selectedQueryForResolve._id,
+  
+      console.log(`Making request to ${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`);
+      console.log("FormData contents:", {
         status: "Resolved",
-        note: message.substring(0, 20) + "...",
-        resolver: resolverName
+        resolver_name: resolverName,
+        resolution_note_length: message.length,
+        has_image: !!image
       });
   
-      // Make the fetch request with proper headers
+      // Make the request
       const response = await fetch(
         `${backendUrl}/api/queries/${selectedQueryForResolve._id}/status`,
         {
           method: "PUT",
           headers: {
-            'Authorization': `Bearer ${token.trim()}` // Added .trim()
+            'Authorization': `Bearer ${token}`
           },
-          body: formData,
+          body: formData
         }
       );
-      
-      // Parse response only after checking if it's ok
+  
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Server responded with error:", response.status, errorData);
@@ -651,7 +652,7 @@ const QueryManagementPage = () => {
       
       setSuccess("Query has been successfully resolved!");
       
-      // Update the query in the list (optimistic update)
+      // Update the query in the list
       setQueries(
         queries.map((q) =>
           q._id === selectedQueryForResolve._id
@@ -665,8 +666,8 @@ const QueryManagementPage = () => {
         setMessage("");
         setImage(null);
         setResolverName("");
-        fetchQueries(); // Refresh the queries
-        fetchQueryStats(); // Also refresh stats
+        fetchQueries();
+        fetchQueryStats();
       }, 2000);
       
     } catch (error) {
@@ -676,7 +677,7 @@ const QueryManagementPage = () => {
       setIsLoading(false);
     }
   };
-
+  
   const handleRejectSubmit = async (e) => {
     e.preventDefault();
     setRejectError("");
@@ -690,42 +691,48 @@ const QueryManagementPage = () => {
         return;
       }
   
-      // Create FormData correctly
+      if (!rejectMessage) {
+        setRejectError("Please provide a reason for rejection");
+        setRejectLoading(false);
+        return;
+      }
+  
+      // Create FormData object
       const formData = new FormData();
+      
+      // Ensure correct capitalization of status value
       formData.append("status", "Rejected");
       formData.append("resolution_note", rejectMessage);
       formData.append("resolver_name", resolverName);
   
       // Get the token with the correct key
       const token = localStorage.getItem("authToken");
-      console.log("Auth Token for Reject API:", token ? `Token starts with: ${token.substring(0, 15)}...` : "TOKEN_NOT_FOUND_IN_LOCALSTORAGE");
-  
-      if (!token || typeof token !== 'string' || token.trim() === '') {
-        setRejectError("Authentication token not found or invalid. Please log in again.");
+      
+      if (!token) {
+        setRejectError("Authentication token not found. Please log in again.");
         setRejectLoading(false);
         return;
       }
-      
-      console.log("Sending rejection request:", {
-        queryId: selectedQueryForReject._id,
+  
+      console.log(`Making request to ${backendUrl}/api/queries/${selectedQueryForReject._id}/status`);
+      console.log("FormData contents:", {
         status: "Rejected",
-        note: rejectMessage.substring(0, 20) + "...",
-        resolver: resolverName
+        resolver_name: resolverName,
+        resolution_note_length: rejectMessage.length
       });
   
-      // Make the fetch request
+      // Make the request
       const response = await fetch(
         `${backendUrl}/api/queries/${selectedQueryForReject._id}/status`,
         {
           method: "PUT",
           headers: {
-            'Authorization': `Bearer ${token.trim()}` // Added .trim()
+            'Authorization': `Bearer ${token}`
           },
-          body: formData,
+          body: formData
         }
       );
   
-      // Parse response only after checking if it's ok
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Server responded with error:", response.status, errorData);
@@ -736,7 +743,7 @@ const QueryManagementPage = () => {
       
       setRejectSuccess("Query has been successfully rejected!");
       
-      // Update the query in the list (optimistic update)
+      // Update the query in the list
       setQueries(
         queries.map((q) =>
           q._id === selectedQueryForReject._id
@@ -749,8 +756,8 @@ const QueryManagementPage = () => {
         setRejectModalOpen(false);
         setRejectMessage("");
         setResolverName("");
-        fetchQueries(); // Refresh the queries
-        fetchQueryStats(); // Also refresh stats
+        fetchQueries();
+        fetchQueryStats();
       }, 2000);
       
     } catch (error) {
