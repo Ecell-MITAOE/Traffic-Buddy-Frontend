@@ -805,8 +805,6 @@ const QueryManagementPage = () => {
             startDate={startDate}
             endDate={endDate}
           />
-          // Find the StatCard section around line 600-620 and replace with:
-
           <motion.div
             className="flex flex-col gap-3 mb-8" // Changed gap-4 to gap-3 to save space
             initial={{ opacity: 0, y: 20 }}
