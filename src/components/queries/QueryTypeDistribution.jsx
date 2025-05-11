@@ -37,7 +37,7 @@ const QueryTypeDistribution = ({ stats, division_admin=true, loading=false }) =>
     { name: "Traffic Congestion", value: stats?.trafficCongestion || 0 },
     { name: "Irregularity", value: stats?.irregularity || 0 },
     { name: "Illegal Parking", value: stats?.illegalParking || 0 },
-    { name: "General Report", value: stats?.generalReport || 0 },
+    { name: "Traffic Signal Issue", value: stats?.trafficsignalissue || 0 },
   ];
 
   if(!division_admin){

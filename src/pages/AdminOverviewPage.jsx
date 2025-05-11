@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { FileSearch, Clock, AlertTriangle, Check, X } from "lucide-react";
 import axios from "axios";
 
 import Header from "../components/common/Header";
@@ -7,6 +8,11 @@ import LineGraph from "../components/overview/lineGraph";
 import CategoryDistributionChart from "../components/overview/CategoryDistributionChart";
 import TwoValueRadialChart from "../components/overview/TwoValueRadialChart";
 import AverageResolutionTimeChart from '../components/adminOverview/AverageResolutionTimeChart';
+
+import QueryStatusChart from "../components/queries/QueryStatusChart";
+import QueryTypeDistribution from "../components/queries/QueryTypeDistribution";
+import QueryTrends from "../components/queries/QueryTrends";
+import StatCard from "../components/common/StatCard";
 
 import InfractionsByDivisionChart from "../components/adminOverview/InfractionsByDivisionChart";
 import HorizontalBarChart from "../components/adminOverview/HorizontalBarChart";
@@ -30,6 +36,27 @@ const AdminOverviewPage = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [timelineActive, setTimelineActive] = useState(false);
+  const [filteredStats, setFilteredStats] = useState({
+    byStatus: {
+      pending: 0,
+      inProgress: 0,
+      resolved: 0,
+      rejected: 0,
+    },
+    byType: {
+      trafficViolation: 0,
+      trafficCongestion: 0,
+      irregularity: 0,
+      roadDamage: 0,
+      illegalParking: 0,
+      suggestion: 0,
+      trafficsignalissue: 0,
+    },
+    total: 0,
+  });
 
   const transitionDuration = 1;
   const transitionDelay = 0.2;
@@ -79,15 +106,9 @@ const AdminOverviewPage = () => {
         const [summaryRes] = await Promise.all(dashboardPromises);
 
         setDashboardData(summaryRes.data.data || {});
+      
         setRecentActivity(allRecentActivities);
-        // console.log(
-        //   "Total recent activities fetched:",
-        //   allRecentActivities.length
-        // );
-        // console.log(
-        //   "Total queries from summary:",
-        //   summaryRes.data.data.totalQueries
-        // );
+        
         if (allRecentActivities.length > 0) {
           //console.log("Sample recent activity:", allRecentActivities[0]);
         }
@@ -102,6 +123,37 @@ const AdminOverviewPage = () => {
 
     fetchData();
   }, [backendUrl]);
+
+
+  useEffect(() => {
+    if (!dashboardData) return;
+    
+    // First transform the data (same as your existing code)
+    const queryTypesData = dashboardData.queryTypes?.map((item) => ({
+      name: item._id,
+      value: item.count,
+    })) || [];
+  
+    // Now set the filteredStats after we have the queryTypesData
+    setFilteredStats({
+      byStatus: dashboardData.queryStatus || {
+        pending: 0,
+        inProgress: 0,
+        resolved: 0,
+        rejected: 0,
+      },
+      byType: {
+        trafficViolation: queryTypesData.find(item => item.name === "Traffic Violation")?.value || 0,
+        trafficCongestion: queryTypesData.find(item => item.name === "Traffic Congestion")?.value || 0,
+        irregularity: queryTypesData.find(item => item.name === "Irregularity")?.value || 0,
+        roadDamage: queryTypesData.find(item => item.name === "Road Damage")?.value || 0,
+        illegalParking: queryTypesData.find(item => item.name === "Illegal Parking")?.value || 0,
+        suggestion: queryTypesData.find(item => item.name === "Suggestion")?.value || 0,
+        trafficsignalissue: queryTypesData.find(item => item.name === "Traffic Signal Issue")?.value || 0,
+      },
+      total: dashboardData.totalQueries || 0,
+    });
+  }, [dashboardData]);
 
   // Transform existing dashboard data
   const queryTypesData =
@@ -401,8 +453,24 @@ const AdminOverviewPage = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-auto relative z-10 flex items-center justify-center">
-        <div className="text-tBase text-xl">Loading dashboard data...</div>
+      <div className="flex-1 overflow-auto relative z-10 flex flex-col items-center justify-center h-screen bg-bgPrimary">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-t-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-12 h-12 absolute top-1/2 left-1/2 -ml-6 -mt-6 border-4 border-t-4 border-green-400 border-t-transparent rounded-full animate-[spin_1.5s_linear_infinite]"></div>
+        </div>
+        <div className="mt-6 text-tBase text-lg font-medium animate-pulse">
+          Loading dashboard data...
+        </div>
+        <div className="mt-2 w-48 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-green-400 to-blue-500 rounded-full animate-[progressBar_2s_ease-in-out_infinite]"></div>
+        </div>
+        <style jsx>{`
+          @keyframes progressBar {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -469,6 +537,84 @@ const AdminOverviewPage = () => {
             {dashboardData.totalQueries || 0}
           </div>
         </div>
+      </motion.div>
+
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: transitionDuration,
+          delay: transitionDelay * 2.2,
+        }}
+      >
+        <QueryStatusChart stats={filteredStats.byStatus} />
+        <QueryTypeDistribution 
+          stats={filteredStats.byType} 
+          division_admin={true}
+          loading={loading} 
+        />
+      </motion.div>
+
+      <motion.div
+        className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-borderPrimary mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: transitionDuration,
+          delay: transitionDelay * 2.25,
+        }}
+      >
+        <div className="flex flex-col gap-3 mb-4">
+          <StatCard
+            name="Total Queries"
+            icon={FileSearch}
+            value={filteredStats.total.toLocaleString()}
+            color="#6366F1"
+          />
+          <div className="grid grid-cols-2 gap-3"> 
+            <StatCard
+              name="Pending"
+              icon={Clock}
+              value={filteredStats.byStatus?.pending || 0}
+              color="#F59E0B"
+            />
+            <StatCard
+              name="In Progress"
+              icon={AlertTriangle}
+              value={filteredStats.byStatus?.inProgress || 0}
+              color="#3B82F6"
+            />
+            <StatCard
+              name="Resolved"
+              icon={Check}
+              value={filteredStats.byStatus?.resolved || 0}
+              color="#10B981"
+            />
+            <StatCard
+              name="Rejected"
+              icon={X}
+              value={filteredStats.byStatus?.rejected || 0}
+              color="#EF4444"
+            />
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: transitionDuration,
+          delay: transitionDelay * 2.3,
+        }}
+      >
+        <QueryTrends
+          timelineActive={timelineActive}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </motion.div>
 
       <motion.div

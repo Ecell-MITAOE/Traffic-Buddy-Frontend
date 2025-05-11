@@ -1593,11 +1593,11 @@ const QueryManagementPage = () => {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm"
-                        placeholder="Enter resolution details or use voice input"
+                        placeholder="Enter resolution details"
                         disabled={isLoading}
                         rows="4"
                       />
-                      <button
+                      {/* <button
                         type="button"
                         onClick={isListening ? stopListening : startListening}
                         disabled={isLoading}
@@ -1608,13 +1608,13 @@ const QueryManagementPage = () => {
                         } text-tBase focus:outline-none focus:ring-2 focus:ring-secondary`}
                       >
                         <Mic size={20} />
-                      </button>
+                      </button> */}
                     </div>
                     {isListening && (
                       <p className="text-sm text-blue-400 mt-1">Listening...</p>
                     )}
                   </div>
-                  <div className="mb-5">
+                  {/* <div className="mb-5">
                     <label
                       htmlFor="image"
                       className="block text-sm font-medium text-gray-400 mb-1"
@@ -1630,7 +1630,7 @@ const QueryManagementPage = () => {
                       className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-tBase hover:file:bg-blue-700"
                       disabled={isLoading}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 <div>
@@ -1699,6 +1699,7 @@ const QueryManagementPage = () => {
                 <button
                   className="text-gray-400 hover:text-tBase"
                   onClick={() => {
+                  // Stop listening when closing the modal
                     setRejectModalOpen(false);
                   }}
                 >
@@ -1708,10 +1709,10 @@ const QueryManagementPage = () => {
 
               <div className="text-center mb-4">
                 <h3 className="text-lg font-medium text-tBase">
-                  Submit Rejection Reason
+                  Reject Query
                 </h3>
                 <p className="text-sm text-gray-400">
-                  Please provide a reason for rejecting this query
+                  Provide details to reject this query
                 </p>
               </div>
 
@@ -1764,41 +1765,66 @@ const QueryManagementPage = () => {
                   </div>
                 )}
 
-                <div className="mb-3">
-                  <label htmlFor="resolverName" className="form-label">
+              <div className="rounded-md -space-y-px">
+                <div className="mb-5">
+                  <label
+                    htmlFor="resolverName"
+                    className="block text-sm font-medium text-gray-400 mb-1"
+                  >
                     Your Name (required)
                   </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="resolverName"
-                    value={resolverName}
-                    onChange={(e) => setResolverName(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="resolverName"
+                      name="resolverName"
+                      value={resolverName}
+                      onChange={(e) => setResolverName(e.target.value)}
+                      className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm"
+                      placeholder="Enter your name"
+                      disabled={rejectLoading}
+                      required
+                    />
+                  </div>
+                </div>
                 </div>
 
                 <div className="rounded-md -space-y-px">
                   <div className="mb-5">
                     <label
-                      htmlFor="reject-message"
+                      htmlFor="message"
                       className="block text-sm font-medium text-gray-400 mb-1"
                     >
-                      Rejection Reason
+                      Rejection Notes
                     </label>
                     <div className="relative">
                       <textarea
-                        id="reject-message"
-                        name="reject-message"
+                        id="message"
+                        name="message"
                         required
                         value={rejectMessage}
                         onChange={(e) => setRejectMessage(e.target.value)}
                         className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm"
-                        placeholder="Enter reason for rejection..."
+                        placeholder="Enter rejection details or use voice input"
                         disabled={rejectLoading}
                         rows="4"
                       />
+                      {/* <button
+                        type="button"
+                        onClick={isRejectListening ? stopRejectListening : startRejectListening}
+                        disabled={rejectLoading}
+                        className={`absolute right-2 top-2 p-2 rounded-full ${
+                          isRejectListening
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        } text-tBase focus:outline-none focus:ring-2 focus:ring-secondary`}
+                      >
+                        <Mic size={20} />
+                      </button> */}
                     </div>
+                    {/* {isRejectListening && (
+                      <p className="text-sm text-blue-400 mt-1">Listening...</p>
+                    )} */}
                   </div>
                 </div>
 
@@ -1808,8 +1834,8 @@ const QueryManagementPage = () => {
                     disabled={rejectLoading}
                     className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-tBase ${
                       rejectLoading
-                        ? "bg-red-400 cursor-not-allowed"
-                        : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        ? "bg-blue-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
                     } transition-colors duration-150`}
                   >
                     {rejectLoading ? (
@@ -1834,10 +1860,10 @@ const QueryManagementPage = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        Submitting...
+                        Rejecting...
                       </>
                     ) : (
-                      "Submit Rejection"
+                      "Reject Query"
                     )}
                   </button>
                 </div>

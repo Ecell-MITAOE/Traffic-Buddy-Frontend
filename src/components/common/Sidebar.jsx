@@ -33,16 +33,16 @@ const Sidebar = () => {
   const getSidebarItems = () => {
     const items = [
       {
-        name: "Overview",
-        icon: BarChart2,
-        color: "#6366f1",
-        href: isMainAdmin?"/adminoverview":"/overview",
-      },
-      {
         name: "Query Management",
         icon: Users,
         color: "#EC4899",
         href: isMainAdmin?"/adminQueryManagement":"/queryManagement",
+      },
+      {
+        name: "Overview",
+        icon: BarChart2,
+        color: "#6366f1",
+        href: isMainAdmin?"/adminoverview":"/overview",
       },
     ];
 

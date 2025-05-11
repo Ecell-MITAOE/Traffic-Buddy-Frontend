@@ -958,7 +958,7 @@ const AdminQueryManagementPage = () => {
       <Header title="Query Management" />
 
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           <QueryStatusChart stats={filteredStats.byStatus} />
           <QueryTypeDistribution 
             stats={filteredStats.byType} 
@@ -983,7 +983,7 @@ const AdminQueryManagementPage = () => {
               value={filteredStats.total.toLocaleString()}
               color="#6366F1"
             />
-            <div className="grid grid-cols-2 gap-3"> {/* Create a 2-column grid for the remaining cards */}
+            <div className="grid grid-cols-2 gap-3"> 
               <StatCard
                 name="Pending"
                 icon={Clock}
@@ -1010,7 +1010,7 @@ const AdminQueryManagementPage = () => {
               />
             </div>
           </motion.div>
-        </div>
+        </div> */}
 
         <motion.div
           className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary mb-8"
@@ -1884,11 +1884,11 @@ const AdminQueryManagementPage = () => {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm"
-                        placeholder="Enter resolution details or use voice input"
+                        placeholder="Enter resolution details"
                         disabled={isLoading}
                         rows="4"
                       />
-                      <button
+                      {/* <button
                         type="button"
                         onClick={isListening ? stopListening : startListening}
                         disabled={isLoading}
@@ -1899,13 +1899,13 @@ const AdminQueryManagementPage = () => {
                         } text-tBase focus:outline-none focus:ring-2 focus:ring-secondary`}
                       >
                         <Mic size={20} />
-                      </button>
+                      </button> */}
                     </div>
                     {isListening && (
                       <p className="text-sm text-blue-400 mt-1">Listening...</p>
                     )}
                   </div>
-                  <div className="mb-5">
+                  {/* <div className="mb-5">
                     <label
                       htmlFor="image"
                       className="block text-sm font-medium text-gray-400 mb-1"
@@ -1921,7 +1921,7 @@ const AdminQueryManagementPage = () => {
                       className="appearance-none relative block w-full px-3 py-3 border border-gray-700 bg-bgSecondary text-tBase placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary sm:text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-tBase hover:file:bg-blue-700"
                       disabled={isLoading}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 <div>
@@ -2103,7 +2103,7 @@ const AdminQueryManagementPage = () => {
                         disabled={rejectLoading}
                         rows="4"
                       />
-                      <button
+                      {/* <button
                         type="button"
                         onClick={isRejectListening ? stopRejectListening : startRejectListening}
                         disabled={rejectLoading}
@@ -2114,7 +2114,7 @@ const AdminQueryManagementPage = () => {
                         } text-tBase focus:outline-none focus:ring-2 focus:ring-secondary`}
                       >
                         <Mic size={20} />
-                      </button>
+                      </button> */}
                     </div>
                     {isRejectListening && (
                       <p className="text-sm text-blue-400 mt-1">Listening...</p>
