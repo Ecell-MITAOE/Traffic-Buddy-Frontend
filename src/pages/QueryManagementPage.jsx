@@ -7,10 +7,10 @@ import {
   FileSearch,
   Mail,
   MapPin,
-  Search,
+  Search, 
   Calendar,
   Download,
-  Mic,
+  Mic, //dicontinued speech to text
   X,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -22,7 +22,6 @@ import StatCard from "../components/common/StatCard";
 import QueryStatusChart from "../components/queries/QueryStatusChart";
 import QueryTypeDistribution from "../components/queries/QueryTypeDistribution";
 import QueryTrends from "../components/queries/QueryTrends";
-import { capitalize } from "@mui/material";
 
 const backendUrl = import.meta.env.VITE_Backend_URL || "http://localhost:3000";
 
@@ -87,7 +86,7 @@ const QueryManagementPage = () => {
       roadDamage: 0,
       illegalParking: 0,
       suggestion: 0,
-      generalReport: 0,
+      trafficsignalissue: 0,
     },
     total: 0,
   });
@@ -100,7 +99,7 @@ const QueryManagementPage = () => {
       roadDamage: 0,
       illegalParking: 0,
       suggestion: 0,
-      generalReport: 0,
+      trafficsignalissue: 0,
     },
     total: 0,
   });
@@ -307,7 +306,7 @@ const QueryManagementPage = () => {
       roadDamage: 0,
       illegalParking: 0,
       suggestion: 0,
-      generalReport: 0,
+      trafficsignalissue: 0,
     };
   
     // Count query types and log them for debugging
@@ -333,7 +332,7 @@ const QueryManagementPage = () => {
       else if (query.query_type === "Road Damage") byType.roadDamage++;
       else if (query.query_type === "Illegal Parking") byType.illegalParking++;
       else if (query.query_type === "Suggestion") byType.suggestion++;
-      else if (query.query_type === "General Report") byType.generalReport++;
+      else if (query.query_type === "Traffic Signal Issue") byType.trafficsignalissue++;
     });
   
     // Log the count of each type for debugging
@@ -909,9 +908,9 @@ const QueryManagementPage = () => {
                   </option>
                   <option
                     className="bg-primary hover:bg-hovPrimary"
-                    value="General Report"
+                    value="Traffic Signal Issue"
                   >
-                    General Report
+                    Traffic Signal Issue
                   </option>
                 </select>
 
