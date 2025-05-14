@@ -242,13 +242,16 @@ const EmailRecordsPage = () => {
             const startDate = new Date(year, month - 1, 1);
             const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
+            // *** FIX: Define monthName here ***
+            const monthName = startDate.toLocaleString('default', { month: 'long' });
+
             const startDateStr = startDate.toISOString().split('T')[0];
             const endDateStr = endDate.toISOString().split('T')[0];
 
             const params = {
                 startDate: startDateStr,
                 endDate: endDateStr,
-                limit: 10000,
+                limit: 10000, // Fetch all matching records for the month/division/department
             };
             if (selectedDivisionFilter) {
                 params.division = selectedDivisionFilter;
@@ -343,7 +346,7 @@ const EmailRecordsPage = () => {
                     fileName += `_${selectedDivisionFilter}`;
                 }
                 if (selectedDepartmentFilter) {
-                    fileName += `_${selectedDepartmentFilter.replace(/\s+/g, '_')}`;
+                    fileName += `_${selectedDepartmentFilter.replace(/\s+/g, '_')}`; // Replace spaces for filename
                 }
                 fileName += `.xlsx`;
                 XLSX.writeFile(workbook, fileName);
