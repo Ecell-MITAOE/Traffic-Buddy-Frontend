@@ -1316,7 +1316,7 @@ const AdminQueryManagementPage = () => {
                     <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-32"> {/* Adjusted width */}
                       Type
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-52"> {/* Adjusted width */}
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-46"> {/* Adjusted width */}
                       Description
                     </th>
                     <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-48"> {/* Adjusted width */}
