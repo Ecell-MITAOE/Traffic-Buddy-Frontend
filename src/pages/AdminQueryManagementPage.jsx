@@ -1316,12 +1316,12 @@ const AdminQueryManagementPage = () => {
                     <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
                       Type
                     </th>
-                    {/* Description - significantly reduced width but font size preserved */}
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28">
+                    {/* Description - Reduced width */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-20"> {/* CHANGED: w-28 to w-20 */}
                       Description
                     </th>
-                    {/* User - significantly reduced width but font size preserved */}
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
+                    {/* User - Reduced width */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-20"> {/* CHANGED: w-24 to w-20 */}
                       User
                     </th>
                     <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
@@ -1355,13 +1355,13 @@ const AdminQueryManagementPage = () => {
                           {query.query_type}
                         </span>
                       </td>
-                      {/* Description cell - same text size, improved truncation */}
+                      {/* Description cell - uses line-clamp for overflow */}
                       <td className="px-2 py-3">
-                        <div className="text-sm text-gray-300 line-clamp-2 max-h-10 overflow-hidden" title={query.description}>
+                        <div className="text-sm text-gray-300 line-clamp-2 max-h-10 overflow-hidden" title={query.description}> {/* Ensure line-clamp is working, you might need to install @tailwindcss/line-clamp plugin if not already */}
                           {query.description}
                         </div>
                       </td>
-                      {/* User cell - same text size but reduced width container */}
+                      {/* User cell - uses truncate and max-w for overflow */}
                       <td className="px-2 py-3 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-6 w-6">
@@ -1369,7 +1369,7 @@ const AdminQueryManagementPage = () => {
                               {query.user_name?.charAt(0)?.toUpperCase() || "U"}
                             </div>
                           </div>
-                          <div className="ml-2 truncate max-w-[70px]">
+                          <div className="ml-2 truncate max-w-[60px]"> {/* CHANGED: max-w-[70px] to max-w-[60px] or adjust as needed */}
                             <div className="text-sm font-medium text-tBase" title={query.user_name}>
                               {query.user_name || 'Unknown'}
                             </div>
@@ -1422,7 +1422,6 @@ const AdminQueryManagementPage = () => {
                   ))}
                 </tbody>
               </table>
-
               <div className="flex justify-between items-center mt-6">
                 <div className="text-sm text-gray-400">
                   Showing page {currentPage} of {totalPages}
