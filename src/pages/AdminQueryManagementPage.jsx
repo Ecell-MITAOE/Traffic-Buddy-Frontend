@@ -1305,33 +1305,36 @@ const AdminQueryManagementPage = () => {
             </div>
           ) : (
             <>
-              <table className="min-w-full divide-y divide-gray-700 table-fixed"> {/* Added table-fixed */}
+              <table className="min-w-full divide-y divide-gray-700 table-fixed">
                 <thead>
                   <tr>
-                    {/* 1. Add Sr.No. Header */}
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-16"> {/* Added width */}
+                    {/* Sr.No. Header */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-12">
                       Sr.No.
                     </th>
-                    {/* 2. Adjust widths */}
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-32"> {/* Adjusted width */}
+                    {/* Type - slightly reduced */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28">
                       Type
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-45"> {/* Adjusted width */}
+                    {/* Description - significantly reduced */}
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-32">
                       Description
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-43"> {/* Adjusted width */}
+                    {/* User - significantly reduced */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28">
                       User
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24"> {/* Adjusted width */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
                       Status
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-36"> {/* Adjusted width */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-32">
                       Date
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24"> {/* Adjusted width */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24">
                       Actions
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-24"> {/* Adjusted width */}
+                    {/* Division - slightly reduced */}
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-20">
                       Division
                     </th>
                   </tr>
@@ -1343,39 +1346,38 @@ const AdminQueryManagementPage = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="hover:bg-hovPrimary/50" // Added hover effect like QueryManagementPage
+                      className="hover:bg-hovPrimary/50"
                     >
-                      {/* 3. Add Sr.No. Data Cell */}
-                      <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {index + 1 + (currentPage - 1) * 20} {/* Assuming limit is 20 */}
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-300">
+                        {index + 1 + (currentPage - 1) * 20}
                       </td>
-                      <td className="px-2 py-4 whitespace-nowrap"> {/* Adjusted padding */}
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
+                      <td className="px-2 py-3 whitespace-nowrap">
+                        <span className="px-1 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
                           {query.query_type}
                         </span>
                       </td>
-                      <td className="px-3 py-4"> {/* Adjusted padding */}
-                        {/* 4. Apply line-clamp for description */}
-                        <div className="text-sm text-gray-300 line-clamp-2" title={query.description}>
+                      {/* Description cell with improved truncation */}
+                      <td className="px-2 py-3">
+                        <div className="text-xs text-gray-300 line-clamp-2 max-h-10 overflow-hidden" title={query.description}>
                           {query.description}
                         </div>
                       </td>
-                      <td className="px-2 py-4 whitespace-nowrap"> {/* Adjusted padding */}
+                      {/* User cell with reduced size */}
+                      <td className="px-2 py-3 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-7 w-7"> {/* Adjusted size */}
-                            <div className="h-7 w-7 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 flex items-center justify-center text-tBase font-semibold text-xs"> {/* Adjusted size and text size */}
-                              {query.user_name?.charAt(0)?.toUpperCase() || "U"} {/* Added safety check and uppercase */}
+                          <div className="flex-shrink-0 h-6 w-6">
+                            <div className="h-6 w-6 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 flex items-center justify-center text-tBase font-semibold text-xs">
+                              {query.user_name?.charAt(0)?.toUpperCase() || "U"}
                             </div>
                           </div>
-                          <div className="ml-2"> {/* Adjusted margin */}
-                            {/* 5. Remove truncation from user name */}
-                            <div className="text-sm font-medium text-tBase" title={query.user_name}>
-                              {query.user_name || 'Unknown'} {/* Added fallback */}
+                          <div className="ml-2 truncate max-w-[80px]">
+                            <div className="text-xs font-medium text-tBase" title={query.user_name}>
+                              {query.user_name || 'Unknown'}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-2 py-4 whitespace-nowrap"> {/* Adjusted padding */}
+                      <td className="px-2 py-3 whitespace-nowrap">
                         <span
                           className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBadgeColor(
                             query.status
@@ -1384,19 +1386,18 @@ const AdminQueryManagementPage = () => {
                           {query.status}
                         </span>
                       </td>
-                      <td className="px-2 py-4 whitespace-nowrap text-xs text-gray-300"> {/* Adjusted padding and text size */}
+                      <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-300">
                         {formatDate(query.timestamp)}
                       </td>
-                      <td className="px-2 py-4 whitespace-nowrap"> {/* Adjusted padding */}
+                      <td className="px-2 py-3 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
                           <button
-                            className="text-blue-400 hover:text-blue-300 text-xs" // Made button text smaller
+                            className="text-blue-400 hover:text-blue-300 text-xs"
                             onClick={() => fetchQueryDetails(query._id)}
-                            title="View Details" // Added title
+                            title="View Details"
                           >
                             Details
                           </button>
-                          {/* 6. Added check for location before rendering map button */}
                           {query.location?.latitude && query.location?.longitude && (
                             <button
                               className="text-green-400 hover:text-green-300"
@@ -1406,17 +1407,16 @@ const AdminQueryManagementPage = () => {
                                   query.location.longitude
                                 )
                               }
-                              title="View on Map" // Added title
+                              title="View on Map"
                             >
-                              <MapPin size={14} /> {/* Adjusted size */}
+                              <MapPin size={12} />
                             </button>
                           )}
                         </div>
                       </td>
-                      <td className="px-2 py-4 whitespace-nowrap"> {/* Adjusted padding */}
-                        {/* 7. Truncate long division names */}
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-700 text-gray-200" title={query.divisionName}>
-                          {query.divisionName ? (query.divisionName.length > 10 ? query.divisionName.substring(0, 8) + '...' : query.divisionName) : 'N/A'}
+                      <td className="px-2 py-3 whitespace-nowrap">
+                        <span className="px-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-700 text-gray-200" title={query.divisionName}>
+                          {query.divisionName ? (query.divisionName.length > 8 ? query.divisionName.substring(0, 6) + '..' : query.divisionName) : 'N/A'}
                         </span>
                       </td>
                     </motion.tr>
