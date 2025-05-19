@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Send, Users, MapPin, Mail, Check, X, Download, ChevronLeft, ChevronRight } from "lucide-react"; // Added Download, ChevronLeft, ChevronRight
+import { Search, Send, Users, MapPin, Mail, Check, X, Download, ChevronLeft, ChevronRight, RotateCw } from "lucide-react"; // Added RotateCw
 import Header from "../components/common/Header";
 import StatCard from "../components/common/StatCard";
 import { motion } from "framer-motion";
@@ -96,6 +96,9 @@ const VolunteerManagementPage = () => {
     const [rejectNote, setRejectNote] = useState("");
     const [rejectorName, setRejectorName] = useState("");
 
+    // Image rotation state
+    const [imageRotation, setImageRotation] = useState(0);
+
     const [selectedOptions, setSelectedOptions] = useState([]);
     const divisionOptions = [
         { value: "MAHALUNGE", label: "Mahalunge" },
@@ -124,6 +127,9 @@ const VolunteerManagementPage = () => {
     // --- Excel Download State ---
     const [selectedMonth, setSelectedMonth] = useState(""); // Format YYYY-MM
     const [isDownloading, setIsDownloading] = useState(false);
+    
+    // --- Month Filter State ---
+    const [filterMonth, setFilterMonth] = useState("");
 
 
     const handleSelectAll = () => {
@@ -138,9 +144,9 @@ const VolunteerManagementPage = () => {
     const API_BASE_URL = `${backendUrl}/api`;
 
     useEffect(() => {
-        fetchJoinRequests(currentPage, activeTab === 'all' ? '' : activeTab); // Fetch based on current page and tab
+        fetchJoinRequests(currentPage, activeTab === 'all' ? '' : activeTab, filterMonth); // Pass month filter to fetch function
         fetchRequestStats();
-    }, [currentPage, activeTab]); // Re-fetch when page or tab changes
+    }, [currentPage, activeTab, filterMonth]); // Re-fetch when month filter changes
 
     const fetchQueryDetails = async (id) => {
         try {
@@ -149,6 +155,7 @@ const VolunteerManagementPage = () => {
                 setDetailsData(response.data.data);
                 setViewDetailsId(response.data.data._id);
                 setDetailsSelectedStatus(response.data.data.status); // Set initial status for details popup
+                setImageRotation(0); // Reset image rotation
             }
         } catch (error) {
             console.error("Error fetching query details:", error);
@@ -170,9 +177,10 @@ const VolunteerManagementPage = () => {
         setViewDetailsId(null);
         setDetailsData(null);
         setDetailsSelectedStatus(""); // Reset details popup status when closing
+        setImageRotation(0); // Reset image rotation
     };
 
-    const fetchJoinRequests = async (page = 1, status = '') => {
+    const fetchJoinRequests = async (page = 1, status = '', month = '') => {
         try {
             setLoading(true);
             const params = {
@@ -180,6 +188,14 @@ const VolunteerManagementPage = () => {
                 limit: itemsPerPage,
                 status: status === 'all' ? '' : status // Pass status filter to backend
             };
+            
+            // Add month filter parameters if a month is selected
+            if (month) {
+                const [year, monthNum] = month.split('-');
+                params.month = parseInt(monthNum);
+                params.year = parseInt(year);
+            }
+            
             const response = await axios.get(`${API_BASE_URL}/applications`, { params });
             setJoinRequests(response.data.data || []);
             setTotalPages(response.data.totalPages || 1);
@@ -226,7 +242,7 @@ const VolunteerManagementPage = () => {
             });
 
             toast.success(`Request ${status.toLowerCase()} successfully`);
-            fetchJoinRequests(currentPage, activeTab); // Re-fetch current page after update
+            fetchJoinRequests(currentPage, activeTab, filterMonth); // Keep month filter
             fetchRequestStats(); // Update stats
             closeDetails(); // Close modal if open
         } catch (error) {
@@ -312,8 +328,6 @@ const VolunteerManagementPage = () => {
         }
     };
 
-    // Removed handleBroadcastToArea as it wasn't fully implemented/used in the provided code snippet
-
     // Client-side filtering for the current page's data
     const filteredRequests = joinRequests.filter(request => {
         const searchLower = searchTerm.toLowerCase();
@@ -326,13 +340,17 @@ const VolunteerManagementPage = () => {
             (request.division && request.division?.toLowerCase().includes(searchLower)) ||
             (request.aadhar_number && request.aadhar_number?.includes(searchTerm))
         );
-        // Backend handles status filtering now, so no need to filter by activeTab here
     });
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages) {
             setCurrentPage(newPage);
         }
+    };
+
+    // Rotate image function
+    const rotateImage = () => {
+        setImageRotation((prev) => (prev + 90) % 360);
     };
 
     // --- Excel Download Function ---
@@ -413,7 +431,6 @@ const VolunteerManagementPage = () => {
         return options;
     };
     const monthOptions = getMonthOptions();
-
 
     return (
         <div className="flex-1 overflow-auto relative z-10">
@@ -558,11 +575,31 @@ const VolunteerManagementPage = () => {
                                 <input
                                     type="text"
                                     placeholder="Search this page..."
-                                    className="pl-10 pr-4 py-2 bg-primary rounded-md border border-borderPrimary text-tBase focus:outline-none focus:ring-2 focus:ring-secondary w-full sm:w-64"
+                                    className="pl-10 pr-4 py-2 bg-primary rounded-md border border-borderPrimary text-tBase focus:outline-none focus:ring-2 focus:ring-secondary w-full sm:w-56"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-tSecondary" />
+                            </div>
+
+                            {/* Month Filter */}
+                            <div className="relative flex-grow sm:flex-grow-0">
+                                <select
+                                    value={filterMonth}
+                                    onChange={(e) => {
+                                        setFilterMonth(e.target.value);
+                                        setCurrentPage(1); // Reset to page 1 when filter changes
+                                    }}
+                                    className="pl-4 pr-8 py-2 bg-primary rounded-md border border-borderPrimary text-tBase focus:outline-none focus:ring-2 focus:ring-secondary w-full sm:w-auto appearance-none"
+                                >
+                                    <option value="">All Months</option>
+                                    {monthOptions.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                    <ChevronDown className="w-4 h-4 text-tSecondary" />
+                                </div>
                             </div>
 
                             {/* Status Tabs */}
@@ -572,7 +609,7 @@ const VolunteerManagementPage = () => {
                                         key={tab}
                                         type="button"
                                         onClick={() => { setActiveTab(tab); setCurrentPage(1); }} // Reset to page 1 on tab change
-                                        className={`px-4 py-2 text-sm font-medium transition-colors duration-150 ${activeTab === tab
+                                        className={`px-3 py-2 text-sm font-medium transition-colors duration-150 ${activeTab === tab
                                                 ? "bg-secondary text-white"
                                                 : "bg-primary text-tBase hover:bg-hovPrimary"
                                             } ${tab === "all" ? "rounded-l-lg" : ""} ${tab === "rejected" ? "rounded-r-lg" : ""
@@ -619,7 +656,9 @@ const VolunteerManagementPage = () => {
                     ) : filteredRequests.length === 0 ? (
                         <div className="bg-bgSecondary bg-opacity-50 rounded-lg p-8 text-center">
                             <p className="text-tBase">
-                                {searchTerm ? "No requests match your search on this page." : `No ${activeTab !== 'all' ? activeTab : ''} join requests found.`}
+                                {searchTerm ? "No requests match your search on this page." : 
+                                 filterMonth ? `No ${activeTab !== 'all' ? activeTab : ''} join requests found for ${filterMonth}.` :
+                                 `No ${activeTab !== 'all' ? activeTab : ''} join requests found.`}
                             </p>
                         </div>
                     ) : (
@@ -628,25 +667,25 @@ const VolunteerManagementPage = () => {
                                 <table className="min-w-full divide-y divide-seperationPrimary">
                                     <thead className="bg-primary sticky top-0"> {/* Make header sticky */}
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider w-16">
-                                                Sr.No.
+                                            <th className="px-2 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider w-12">
+                                                Sr.
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
+                                            <th className="px-3 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
                                                 Applicant
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
+                                            <th className="px-3 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
                                                 Contact
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
-                                                Division
+                                            <th className="px-3 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
+                                                Div
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
-                                                Applied At
+                                            <th className="px-3 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
+                                                Applied
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
+                                            <th className="px-3 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
                                                 Status
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
+                                            <th className="px-3 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
@@ -654,39 +693,39 @@ const VolunteerManagementPage = () => {
                                     <tbody className="bg-bgSecondary bg-opacity-50 divide-y divide-seperationSecondary">
                                         {filteredRequests.map((request, index) => (
                                             <tr key={request._id} className="hover:bg-hovPrimary transition-colors duration-150">
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                                                <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-300">
                                                     {(currentPage - 1) * itemsPerPage + index + 1}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-3 py-3 whitespace-nowrap">
                                                     <div className="flex items-center">
-                                                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
-                                                            <span className="text-tBase font-medium">
+                                                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+                                                            <span className="text-tBase font-medium text-xs">
                                                                 {request.full_name?.charAt(0).toUpperCase() || request.user_name?.charAt(0).toUpperCase() || '?'}
                                                             </span>
                                                         </div>
-                                                        <div className="ml-4">
+                                                        <div className="ml-3">
                                                             <div className="text-sm font-medium text-tBase">
                                                                 {request.full_name || request.user_name || "Unknown"}
                                                             </div>
-                                                            <div className="text-sm text-tSecondary">
+                                                            <div className="text-xs text-tSecondary truncate max-w-[140px]">
                                                                 {request.user_id?.replace("whatsapp:", "")}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-tBase">{request.email || "N/A"}</div>
+                                                <td className="px-3 py-3 whitespace-nowrap">
+                                                    <div className="text-sm text-tBase truncate max-w-[120px]">{request.email || "N/A"}</div>
                                                     <div className="text-sm text-tSecondary">{request.phone || "N/A"}</div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-3 py-3 whitespace-nowrap">
                                                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100 capitalize ">
                                                         {request.division || "N/A"}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-tSecondary">
-                                                    {formatDate(request.applied_at)}
+                                                <td className="px-3 py-3 whitespace-nowrap text-sm text-tSecondary">
+                                                    {new Date(request.applied_at).toLocaleDateString()}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-3 py-3 whitespace-nowrap">
                                                     <span
                                                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                                         ${request.status === "Pending" ? "bg-red-500 text-white-100" // Changed Pending color
@@ -697,7 +736,7 @@ const VolunteerManagementPage = () => {
                                                         {request.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <td className="px-3 py-3 whitespace-nowrap text-sm font-medium">
                                                     <button
                                                         className="text-indigo-400 hover:text-indigo-300"
                                                         onClick={() => fetchQueryDetails(request._id)}
@@ -758,20 +797,35 @@ const VolunteerManagementPage = () => {
                             </div>
 
                             <div className="flex flex-col md:flex-row gap-6">
-                                {/* Aadhar Image */}
+                                {/* Aadhar Image with Rotation Control */}
                                 {detailsData.aadhar_document_url && (
                                     <div className="flex-shrink-0 md:w-1/3">
-                                        <h3 className="text-sm font-medium text-gray-400 mb-2">
-                                            Aadhar Card:
-                                        </h3>
-                                        <a href={detailsData.aadhar_document_url} target="_blank" rel="noopener noreferrer" title="Click to view full size">
-                                            <img
-                                                src={detailsData.aadhar_document_url}
-                                                alt="Aadhar Card"
-                                                className="rounded-lg object-contain w-full border border-borderPrimary cursor-pointer hover:opacity-90 transition-opacity"
-                                                style={{ maxHeight: "400px" }}
-                                            />
-                                        </a>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h3 className="text-sm font-medium text-gray-400">
+                                                Aadhar Card:
+                                            </h3>
+                                            <button 
+                                                onClick={rotateImage}
+                                                className="flex items-center text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-md"
+                                                title="Rotate Image"
+                                            >
+                                                <RotateCw className="w-4 h-4 mr-1" /> Rotate
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            <a href={detailsData.aadhar_document_url} target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                                <img
+                                                    src={detailsData.aadhar_document_url}
+                                                    alt="Aadhar Card"
+                                                    className="rounded-lg object-contain w-full border border-borderPrimary cursor-pointer hover:opacity-90 transition-opacity"
+                                                    style={{ 
+                                                        maxHeight: "400px",
+                                                        transform: `rotate(${imageRotation}deg)`,
+                                                        transition: "transform 0.3s ease"
+                                                    }}
+                                                />
+                                            </a>
+                                        </div>
                                     </div>
                                 )}
 
