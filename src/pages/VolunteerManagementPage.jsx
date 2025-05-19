@@ -804,27 +804,57 @@ const VolunteerManagementPage = () => {
                                             <h3 className="text-sm font-medium text-gray-400">
                                                 Aadhar Card:
                                             </h3>
-                                            <button 
-                                                onClick={rotateImage}
-                                                className="flex items-center text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-md"
-                                                title="Rotate Image"
-                                            >
-                                                <RotateCw className="w-4 h-4 mr-1" /> Rotate
-                                            </button>
+                                            {detailsData.aadhar_document_url.toLowerCase().endsWith('.pdf') ? (
+                                                <a 
+                                                    href={detailsData.aadhar_document_url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center text-sm bg-blue-700 hover:bg-blue-600 text-gray-200 px-2 py-1 rounded-md"
+                                                >
+                                                    <Download className="w-4 h-4 mr-1" /> Open PDF
+                                                </a>
+                                            ) : (
+                                                <button 
+                                                    onClick={rotateImage}
+                                                    className="flex items-center text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-md"
+                                                    title="Rotate Image"
+                                                >
+                                                    <RotateCw className="w-4 h-4 mr-1" /> Rotate
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="relative">
-                                            <a href={detailsData.aadhar_document_url} target="_blank" rel="noopener noreferrer" title="Click to view full size">
-                                                <img
-                                                    src={detailsData.aadhar_document_url}
-                                                    alt="Aadhar Card"
-                                                    className="rounded-lg object-contain w-full border border-borderPrimary cursor-pointer hover:opacity-90 transition-opacity"
-                                                    style={{ 
-                                                        maxHeight: "400px",
-                                                        transform: `rotate(${imageRotation}deg)`,
-                                                        transition: "transform 0.3s ease"
-                                                    }}
-                                                />
-                                            </a>
+                                            {detailsData.aadhar_document_url.toLowerCase().endsWith('.pdf') ? (
+                                                <div className="border border-borderPrimary rounded-lg bg-primary p-2 flex flex-col items-center">
+                                                    <iframe
+                                                        src={`${detailsData.aadhar_document_url}#toolbar=0&navpanes=0`}
+                                                        className="w-full rounded"
+                                                        style={{ height: "350px" }}
+                                                        title="Aadhar Document"
+                                                    />
+                                                    <a 
+                                                        href={detailsData.aadhar_document_url} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+                                                    >
+                                                        View full PDF in new tab
+                                                    </a>
+                                                </div>
+                                            ) : (
+                                                <a href={detailsData.aadhar_document_url} target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                                    <img
+                                                        src={detailsData.aadhar_document_url}
+                                                        alt="Aadhar Card"
+                                                        className="rounded-lg object-contain w-full border border-borderPrimary cursor-pointer hover:opacity-90 transition-opacity"
+                                                        style={{ 
+                                                            maxHeight: "400px",
+                                                            transform: `rotate(${imageRotation}deg)`,
+                                                            transition: "transform 0.3s ease"
+                                                        }}
+                                                    />
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                 )}
