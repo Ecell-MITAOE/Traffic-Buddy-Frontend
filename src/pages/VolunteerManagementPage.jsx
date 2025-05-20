@@ -3,11 +3,29 @@ import Header from "../components/common/Header";
 import StatCard from "../components/common/StatCard";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { Search, Send, Users, MapPin, Mail, Check, X, Download, ChevronLeft, ChevronRight, RotateCw, ChevronDown } from "lucide-react";
+import { Search, Send, Users, MapPin, Mail, Check, X, Download, ChevronLeft, ChevronRight, RotateCw, ChevronDown, Filter } from "lucide-react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 import * as XLSX from 'xlsx'; // Import xlsx library
 
+const divisions = [
+    { value: "", label: "All Divisions" },
+    { value: "MAHALUNGE", label: "Mahalunge" },
+    { value: "CHAKAN", label: "Chakan" },
+    { value: "DIGHI ALANDI", label: "Dighi-Alandi" },
+    { value: "BHOSARI", label: "Bhosari" },
+    { value: "TALWADE", label: "Talwade" },
+    { value: "PIMPRI", label: "Pimpri" },
+    { value: "CHINCHWAD", label: "Chinchwad" },
+    { value: "NIGDI", label: "Nigdi" },
+    { value: "SANGAVI", label: "Sangavi" },
+    { value: "HINJEWADI", label: "Hinjewadi" },
+    { value: "WAKAD", label: "Wakad" },
+    { value: "BAVDHAN", label: "Bavdhan" },
+    { value: "DEHUROAD", label: "Dehuroad" },
+    { value: "TALEGAON", label: "Talegaon" },
+    { value: "UNKNOWN", label: "Unknown" },
+];
 const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 
@@ -131,6 +149,12 @@ const VolunteerManagementPage = () => {
     // --- Month Filter State ---
     const [filterMonth, setFilterMonth] = useState("");
 
+    // --- Division Filter State ---
+    const [selectedDivisionFilter, setSelectedDivisionFilter] = useState("");
+
+    const handleDivisionFilterChange = (e) => {
+        setSelectedDivisionFilter(e.target.value);
+    };
 
     const handleSelectAll = () => {
         setSelectedOptions(divisionOptions);
@@ -146,7 +170,7 @@ const VolunteerManagementPage = () => {
     useEffect(() => {
         fetchJoinRequests(currentPage, activeTab === 'all' ? '' : activeTab, filterMonth); // Pass month filter to fetch function
         fetchRequestStats();
-    }, [currentPage, activeTab, filterMonth]); // Re-fetch when month filter changes
+    }, [currentPage, activeTab, filterMonth, selectedDivisionFilter]); // Re-fetch when month filter changes
 
     const fetchQueryDetails = async (id) => {
         try {
@@ -194,6 +218,11 @@ const VolunteerManagementPage = () => {
                 const [year, monthNum] = month.split('-');
                 params.month = parseInt(monthNum);
                 params.year = parseInt(year);
+            }
+
+            // Add division filter if selected
+            if (selectedDivisionFilter) {
+                params.division = selectedDivisionFilter;
             }
             
             const response = await axios.get(`${API_BASE_URL}/applications`, { params });
@@ -283,7 +312,7 @@ const VolunteerManagementPage = () => {
             return;
         }
         
-        const note = `Rejected by ${rejectorName}. Reason: ${rejectNote}`;
+        const note = `${rejectNote}`;
         updateRequestStatus(currentRequestId, "Rejected", rejectorName, note);
         
         // Reset state
@@ -595,6 +624,25 @@ const VolunteerManagementPage = () => {
                                     <option value="">All Months</option>
                                     {monthOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                    <ChevronDown className="w-4 h-4 text-tSecondary" />
+                                </div>
+                            </div>
+                            
+                            {/* Division Filter */}
+                            <div className="relative flex-grow sm:flex-grow-0">
+                                <select
+                                    id="division-filter"
+                                    value={selectedDivisionFilter}
+                                    onChange={handleDivisionFilterChange}
+                                    className="pl-4 pr-8 py-2 bg-primary rounded-md border border-borderPrimary text-tBase focus:outline-none focus:ring-2 focus:ring-secondary w-full sm:w-auto appearance-none"
+                                >
+                                    {divisions.map(div => (
+                                        <option key={div.value} value={div.value} className="bg-primary hover:bg-hovPrimary">
+                                            {div.label}
+                                        </option>
                                     ))}
                                 </select>
                                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
