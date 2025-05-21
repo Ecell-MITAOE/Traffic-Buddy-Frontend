@@ -91,6 +91,15 @@ const VolunteerManagementPage = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [broadcastMessage, setBroadcastMessage] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+    useEffect(() => {
+        const delay = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setCurrentPage(1);
+        }, 500);
+        return () => clearTimeout(delay);
+    }, [searchTerm]);
+
     // const [broadcastArea, setBroadcastArea] = useState(""); // Removed as it wasn't used in the broadcast function shown
     const [isBroadcasting, setIsBroadcasting] = useState(false);
     const [activeTab, setActiveTab] = useState("pending"); // Default to pending
@@ -167,10 +176,12 @@ const VolunteerManagementPage = () => {
     // API base URL - can be moved to environment variable
     const API_BASE_URL = `${backendUrl}/api`;
 
+    // In useEffect, only fetch on relevant changes
     useEffect(() => {
-        fetchJoinRequests(currentPage, activeTab === 'all' ? '' : activeTab, filterMonth); // Pass month filter to fetch function
+        fetchJoinRequests(currentPage, activeTab === 'all' ? '' : activeTab, filterMonth, debouncedSearch);
         fetchRequestStats();
-    }, [currentPage, activeTab, filterMonth, selectedDivisionFilter]); // Re-fetch when month filter changes
+        // eslint-disable-next-line
+    }, [currentPage, activeTab, filterMonth, selectedDivisionFilter, searchTerm]);
 
     const fetchQueryDetails = async (id) => {
         try {
@@ -204,31 +215,29 @@ const VolunteerManagementPage = () => {
         setImageRotation(0); // Reset image rotation
     };
 
-    const fetchJoinRequests = async (page = 1, status = '', month = '') => {
+    const fetchJoinRequests = async (page = 1, status = '', month = '', search = '') => {
         try {
             setLoading(true);
             const params = {
                 page: page,
                 limit: itemsPerPage,
-                status: status === 'all' ? '' : status // Pass status filter to backend
+                status: status === 'all' ? '' : status
             };
-            
-            // Add month filter parameters if a month is selected
             if (month) {
                 const [year, monthNum] = month.split('-');
                 params.month = parseInt(monthNum);
                 params.year = parseInt(year);
             }
-
-            // Add division filter if selected
             if (selectedDivisionFilter) {
                 params.division = selectedDivisionFilter;
             }
-            
+            if (searchTerm && searchTerm.trim() !== '') {
+                params.search = searchTerm.trim();
+            }
             const response = await axios.get(`${API_BASE_URL}/applications`, { params });
             setJoinRequests(response.data.data || []);
             setTotalPages(response.data.totalPages || 1);
-            setCurrentPage(response.data.currentPage || 1);
+            // Do NOT setCurrentPage from backend response here; rely on state only
             setLoading(false);
         } catch (error) {
             console.error("Error fetching join requests:", error);
@@ -357,26 +366,6 @@ const VolunteerManagementPage = () => {
         }
     };
 
-    // Client-side filtering for the current page's data
-    const filteredRequests = joinRequests.filter(request => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-            (request.full_name && request.full_name.toLowerCase().includes(searchLower)) ||
-            (request.user_name && request.user_name.toLowerCase().includes(searchLower)) ||
-            (request.motivation && request.motivation.toLowerCase().includes(searchLower)) ||
-            (request.email && request.email?.toLowerCase().includes(searchLower)) ||
-            (request.phone && request.phone?.includes(searchTerm)) ||
-            (request.division && request.division?.toLowerCase().includes(searchLower)) ||
-            (request.aadhar_number && request.aadhar_number?.includes(searchTerm))
-        );
-    });
-
-    const handlePageChange = (newPage) => {
-        if (newPage >= 1 && newPage <= totalPages) {
-            setCurrentPage(newPage);
-        }
-    };
-
     // Rotate image function
     const rotateImage = () => {
         setImageRotation((prev) => (prev + 90) % 360);
@@ -460,6 +449,13 @@ const VolunteerManagementPage = () => {
         return options;
     };
     const monthOptions = getMonthOptions();
+
+    // --- Pagination Controls ---
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
 
     return (
         <div className="flex-1 overflow-auto relative z-10">
@@ -701,19 +697,43 @@ const VolunteerManagementPage = () => {
                         <div className="flex justify-center items-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-borderSecondary"></div>
                         </div>
-                    ) : filteredRequests.length === 0 ? (
+                    ) : joinRequests.length === 0 ? (
                         <div className="bg-bgSecondary bg-opacity-50 rounded-lg p-8 text-center">
                             <p className="text-tBase">
-                                {searchTerm ? "No requests match your search on this page." : 
+                                {searchTerm ? "No requests match your search." : 
                                  filterMonth ? `No ${activeTab !== 'all' ? activeTab : ''} join requests found for ${filterMonth}.` :
                                  `No ${activeTab !== 'all' ? activeTab : ''} join requests found.`}
                             </p>
                         </div>
                     ) : (
                         <>
+                            
+                            {/* --- Top Pagination Controls --- */}
+                            <div className="flex justify-between items-center mt-4 mb-2 px-4 py-3 border-t border-borderPrimary">
+                                <span className="text-sm text-tSecondary">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1 text-sm bg-primary hover:bg-hovPrimary text-tBase rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                    >
+                                        <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                                    </button>
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-1 text-sm bg-primary hover:bg-hovPrimary text-tBase rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                    >
+                                        Next <ChevronRight className="w-4 h-4 ml-1" />
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-seperationPrimary">
-                                    <thead className="bg-primary sticky top-0"> {/* Make header sticky */}
+                                    <thead className="bg-primary sticky top-0">
                                         <tr>
                                             <th className="px-2 py-3 text-left text-xs font-medium text-tBase uppercase tracking-wider w-12">
                                                 Sr.
@@ -739,7 +759,7 @@ const VolunteerManagementPage = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-bgSecondary bg-opacity-50 divide-y divide-seperationSecondary">
-                                        {filteredRequests.map((request, index) => (
+                                        {joinRequests.map((request, index) => (
                                             <tr key={request._id} className="hover:bg-hovPrimary transition-colors duration-150">
                                                 <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-300">
                                                     {(currentPage - 1) * itemsPerPage + index + 1}
