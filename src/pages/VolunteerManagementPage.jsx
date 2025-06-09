@@ -6,7 +6,8 @@ import axios from "axios";
 import { Search, Send, Users, MapPin, Mail, Check, X, Download, ChevronLeft, ChevronRight, RotateCw, ChevronDown, Filter } from "lucide-react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-import * as XLSX from 'xlsx'; // Import xlsx library
+import * as XLSX from 'xlsx';
+import Pagination from "../components/common/Pagination";
 
 const divisions = [
     { value: "", label: "All Divisions" },
@@ -707,28 +708,13 @@ const VolunteerManagementPage = () => {
                         </div>
                     ) : (
                         <>
-                            
-                            {/* --- Top Pagination Controls --- */}
-                            <div className="flex justify-between items-center mt-4 mb-2 px-4 py-3 border-t border-borderPrimary">
-                                <span className="text-sm text-tSecondary">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handlePageChange(currentPage - 1)}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-1 text-sm bg-primary hover:bg-hovPrimary text-tBase rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                                    >
-                                        <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-                                    </button>
-                                    <button
-                                        onClick={() => handlePageChange(currentPage + 1)}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-1 text-sm bg-primary hover:bg-hovPrimary text-tBase rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                                    >
-                                        Next <ChevronRight className="w-4 h-4 ml-1" />
-                                    </button>
-                                </div>
+                              {/* --- Top Pagination Controls --- */}
+                            <div className="px-4 py-3 border-t border-borderPrimary">
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={handlePageChange}
+                                />
                             </div>
 
                             <div className="overflow-x-auto">
@@ -816,28 +802,13 @@ const VolunteerManagementPage = () => {
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
-                            {/* --- Pagination Controls --- */}
-                            <div className="flex justify-between items-center mt-4 px-4 py-3 border-t border-borderPrimary">
-                                <span className="text-sm text-tSecondary">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handlePageChange(currentPage - 1)}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-1 text-sm bg-primary hover:bg-hovPrimary text-tBase rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                                    >
-                                        <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-                                    </button>
-                                    <button
-                                        onClick={() => handlePageChange(currentPage + 1)}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-1 text-sm bg-primary hover:bg-hovPrimary text-tBase rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                                    >
-                                        Next <ChevronRight className="w-4 h-4 ml-1" />
-                                    </button>
-                                </div>
+                            </div>                            {/* --- Pagination Controls --- */}
+                            <div className="px-4 py-3 border-t border-borderPrimary">
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={handlePageChange}
+                                />
                             </div>
                         </>
                     )}

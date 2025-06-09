@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import toast from "react-hot-toast";
 import UserEdit from "../components/userManagement/userEdit";
+import Pagination from "../components/common/Pagination";
 
 const backendUrl = import.meta.env.VITE_Backend_URL || "http://localhost:3000";
 
@@ -13,15 +14,11 @@ const backendUrl = import.meta.env.VITE_Backend_URL || "http://localhost:3000";
 
 const UserManagementPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  //YASHRAJ: Make sure to set total pages user AdminQueryMagagemetnPage for reference
   const [totalPages, setTotalPages] = useState(1);
-
   const [viewDetailsId, setViewDetailsId] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
-
   const [viewEditUserId, setViewEditUserId] = useState(null);
   const [userData, setUserData] = useState(null);
-
   const [viewChangeUser, setViewChangeUser] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,11 +33,11 @@ const UserManagementPage = () => {
   const fetchOfficerData = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/users/current-officer/`
-      );
-      //////console.log("fetchOfficerData", response.data);
-      setQueries(response.data.officers);
-      setTotalPages(1);
+        `${API_BASE_URL}/users/current-officer/?page=${currentPage}&limit=15`
+      );      setQueries(response.data.officers);
+      // Check if response.data.total exists, otherwise use the officers array length
+      const total = response.data.total || response.data.officers.length;
+      setTotalPages(Math.max(1, Math.ceil(total / 15)));
       setError(null);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -50,35 +47,31 @@ const UserManagementPage = () => {
     }
   };
   
+  const filterQueries = async () => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/users/filter-officers?searchTerm=${searchTerm}&status=${selectedUserType}&page=${currentPage}&limit=15`
+      );      if (response.data.success) {
+        setQueries(response.data.officers);
+        // Check if response.data.total exists, otherwise use the officers array length
+        const total = response.data.total || response.data.officers.length;
+        setTotalPages(Math.max(1, Math.ceil(total / 15)));
+      } else {
+        toast.error("Failed to fetch data");
+      }
+    } catch (err) {
+      console.error("Error filtering queries:", err);
+      toast.error("Failed to fetch filtered data");
+    }
+  };
+
   useEffect(() => {
-    //////console.log("searchTerm: ", searchTerm);
-    ////console.log("selectedUserType: ", selectedUserType);
     if (searchTerm === "" && selectedUserType === "active") {
       fetchOfficerData();
     } else {
       filterQueries();
     }
   }, [currentPage, searchTerm, selectedUserType]);
-
-  const filterQueries = async () => {
-    // setLoading(true);
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/users/filter-officers?searchTerm=${searchTerm}&status=${selectedUserType}`
-      );
-      ////console.log("Filter Queries Response: ",response.data);
-      if (response.data.success) {
-        setQueries(response.data.officers);
-      } else {
-        toast.error("Failed to fetch data");
-      }
-    }catch (err) {
-      console.error("Error fetching dashboard data:", err);
-    }
-    finally {
-      setLoading(false);
-    }
-  }
 
   const fetchUserDetails = async (divisionId) => {
     const response = await axios.get(`${API_BASE_URL}/users/current-officer/${divisionId}`);
@@ -250,8 +243,21 @@ const UserManagementPage = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-            <>
-              <table className="min-w-full divide-y divide-seperationPrimary">
+            <>              {/* Top Pagination Controls */}
+              <div className="px-4 py-3 border-b border-borderPrimary mb-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-400">
+                    Showing page {currentPage} of {totalPages}
+                  </div>
+                  <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              </div>
+
+              <table className="min-w-full divide-y divide-gray-700">
                 <thead>
                   <tr>
                     {/* Added Sr.No. column header */}
@@ -280,9 +286,8 @@ const UserManagementPage = () => {
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                     >
-                      {/* Added Sr.No. column data */}
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {(currentPage - 1) * 10 + index + 1}
+                      {/* Added Sr.No. column data */}                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {(currentPage - 1) * 15 + index + 1}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -335,38 +340,17 @@ const UserManagementPage = () => {
                     </motion.tr>
                   ))}
                 </tbody>
-              </table>
-
-              {/* Pagination */}
-              <div className="flex justify-between items-center mt-6">
-                <div className="text-sm text-gray-400">
-                  Showing page {currentPage} of {totalPages}
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
-                    disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === 1
-                        ? "bg-bgSecondary text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-tBase hover:bg-blue-700"
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentPage((c) => (c < totalPages ? c + 1 : c))
-                    }
-                    disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === totalPages
-                        ? "bg-bgSecondary text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-tBase hover:bg-blue-700"
-                    }`}
-                  >
-                    Next
-                  </button>
+              </table>              {/* Bottom Pagination Controls */}              {/* Bottom Pagination Controls */}
+              <div className="px-4 py-3 border-t border-borderPrimary mt-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-400">
+                    Showing page {currentPage} of {totalPages}
+                  </div>
+                  <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
                 </div>
               </div>
             </>
