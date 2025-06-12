@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import CustomDropdown from "../components/common/CustomDropdown";
+import Pagination from "../components/common/Pagination";
 import {
   AlertTriangle,
   Check,
@@ -316,9 +317,10 @@ const AdminQueryManagementPage = () => {
 
   const fetchQueries = async () => {
     setLoading(true);
-    try {
-      let url = `${backendUrl}/api/queries?page=${currentPage}&limit=20&aggregate=${isAggregate}`;
+    try {      // Using consistent limit of 15 items per page across all management pages
+      let url = `${backendUrl}/api/queries?page=${currentPage}&limit=15&aggregate=${isAggregate}`;
 
+      // Add search term if provided
       if (searchTerm) {
         url += `&search=${searchTerm}`;
       }
@@ -465,12 +467,10 @@ const AdminQueryManagementPage = () => {
 
       const response = await axios.get(
         `${backendUrl}/api/queries/time-filter?start=${formattedStartDate}&end=${formattedEndDate}&division=${divisionId}`
-      );
-
-      if (response.data.success) {
+      );      if (response.data.success) {
         console.log(`Received ${response.data.count} queries for time range`);
         setQueries(response.data.data);
-        setTotalPages(Math.ceil(response.data.count / 20));
+        setTotalPages(Math.ceil(response.data.count / 15));
         setCurrentPage(1);
       }
     } catch (error) {
@@ -1292,7 +1292,7 @@ const AdminQueryManagementPage = () => {
         </motion.div>
 
         <motion.div
-          className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary mb-8 overflow-x-auto"
+          className="bg-bgSecondary bg-opacity-50 backdrop-blur-md shadow-lg shadow-bgPrimary rounded-xl p-6 border border-borderPrimary mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -1305,7 +1305,15 @@ const AdminQueryManagementPage = () => {
             </div>
           ) : (
             <>
-                            <table className="min-w-full divide-y divide-gray-700 table-fixed">
+              {/* Top Pagination Controls */}
+              <div className="px-4 py-3 border-b border-borderPrimary mb-4">
+                <Pagination 
+                  currentPage={currentPage} 
+                  totalPages={totalPages}
+                  onPageChange={page => setCurrentPage(page)}
+                />
+              </div>
+              <table className="min-w-full divide-y divide-gray-700 table-fixed">
                 <thead>
                   <tr>
                     {/* Sr.No. Header - kept narrow */}
@@ -1350,9 +1358,9 @@ const AdminQueryManagementPage = () => {
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                       className="hover:bg-hovPrimary/50"
-                    >
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-300">
-                        {index + 1 + (currentPage - 1) * 20}
+                    >                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-300">
+                        {/* Serial number using 15 items per page */}
+                        {index + 1 + (currentPage - 1) * 15}
                       </td>
                       <td className="px-2 py-3 whitespace-nowrap">
                         <span className="px-1 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
@@ -1427,38 +1435,11 @@ const AdminQueryManagementPage = () => {
                 </tbody>
               </table>
 
-              
-              <div className="flex justify-between items-center mt-6">
-                <div className="text-sm text-gray-400">
-                  Showing page {currentPage} of {totalPages}
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
-                    disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === 1
-                        ? "bg-bgSecondary text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-tBase hover:bg-blue-700"
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentPage((c) => (c < totalPages ? c + 1 : c))
-                    }
-                    disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === totalPages
-                        ? "bg-bgSecondary text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-tBase hover:bg-blue-700"
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
+                <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages}
+                onPageChange={page => setCurrentPage(page)}
+              />
             </>
           )}
         </motion.div>
@@ -2070,6 +2051,7 @@ const AdminQueryManagementPage = () => {
                     className="block text-sm font-medium text-gray-400 mb-1"
                   >
                     Your Name (required)
+
                   </label>
                   <div className="relative">
                     <input
@@ -2132,8 +2114,8 @@ const AdminQueryManagementPage = () => {
                     disabled={rejectLoading}
                     className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-tBase ${
                       rejectLoading
-                        ? "bg-blue-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+                        ? "bg-red-400 cursor-not-allowed"
+                        : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     } transition-colors duration-150`}
                   >
                     {rejectLoading ? (
@@ -2251,7 +2233,6 @@ const AdminQueryManagementPage = () => {
                               d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                               clipRule="evenodd"
                             />
-                          </svg>
                         </div>
                         <div className="ml-3">
                           <p className="text-sm text-green-200">{rejectSuccess}</p>
@@ -2330,7 +2311,7 @@ const AdminQueryManagementPage = () => {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             ></path>
                           </svg>
-                          Submitting...
+                          Rejecting...
                         </>
                       ) : (
                         "Submit Rejection"

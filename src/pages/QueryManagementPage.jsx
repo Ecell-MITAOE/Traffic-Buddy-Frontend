@@ -1,4 +1,5 @@
 import CustomDropdown from "../components/common/CustomDropdown";
+import Pagination from "../components/common/Pagination";
 import { useState, useEffect } from "react";
 import {
   AlertTriangle,
@@ -349,9 +350,9 @@ const QueryManagementPage = () => {
   };
 
   const fetchQueries = async () => {
-    setLoading(true);
-    try {
-      let url = `${backendUrl}/api/queries?page=${currentPage}&limit=20&division=${divisionId}&aggregate=${isAggregate}`;
+    setLoading(true);    try {
+      // Using consistent limit of 15 items per page across all management pages
+      let url = `${backendUrl}/api/queries?page=${currentPage}&limit=15&division=${divisionId}&aggregate=${isAggregate}`;
 
       if (searchTerm) {
         url += `&search=${searchTerm}`;
@@ -1029,7 +1030,16 @@ const QueryManagementPage = () => {
             </div>
           ) : (
             <>
-              <table className="min-w-full divide-y divide-gray-700 table-fixed">
+              {/* Top Pagination Controls */}
+            <div className="px-4 py-3 border-t border-borderPrimary">
+                <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
+            </div>
+
+            <table className="min-w-full divide-y divide-gray-700">
                 <thead>
                     <tr>
                         {/* 1. Change Header to Sr.No. */}
@@ -1066,10 +1076,9 @@ const QueryManagementPage = () => {
                             key={query._id}
                             // ... other props ...
                             className="hover:bg-hovPrimary/50"
-                        >
-                            <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                                {/* Serial number calculation remains the same */}
-                                {index + 1 + (currentPage - 1) * 20}
+                        >                            <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {/* Serial number using 15 items per page */}
+                                {index + 1 + (currentPage - 1) * 15}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap">
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
@@ -1142,39 +1151,11 @@ const QueryManagementPage = () => {
                         </motion.tr>
                     ))}
                 </tbody>
-            </table>
-
-              <div className="flex justify-between items-center mt-6">
-                <div className="text-sm text-gray-400">
-                  Showing page {currentPage} of {totalPages}
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
-                    disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === 1
-                        ? "bg-bgSecondary text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-tBase hover:bg-blue-700"
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentPage((c) => (c < totalPages ? c + 1 : c))
-                    }
-                    disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === totalPages
-                        ? "bg-bgSecondary text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-tBase hover:bg-blue-700"
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
+            </table>              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages}
+                onPageChange={page => setCurrentPage(page)}
+              />
             </>
           )}
         </motion.div>
