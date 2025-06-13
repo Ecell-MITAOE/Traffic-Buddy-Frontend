@@ -990,6 +990,16 @@ const VolunteerManagementPage = () => {
                                                 Reject
                                             </button>
                                         )}
+                                        {detailsData.status === "Rejected" && (
+                                            <button
+                                                onClick={() => handleApprove(detailsData._id)}
+                                                className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition text-sm font-medium"
+                                                title="Reject"
+                                            >
+                                                <Check className="w-5 h-5 mr-1" />
+                                                Approve Candidate
+                                            </button>
+                                        )}
                                     </>
                                 )}
                                 <button
